@@ -63,9 +63,7 @@ export function RegisterForm() {
         </CardHeader>
         <form onSubmit={onSubmit}>
           <CardContent className="flex flex-col gap-4">
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
+            {error && <p className="text-sm text-destructive">{error}</p>}
             <div className="grid gap-2">
               <Label htmlFor="email">E-post</Label>
               <Input
@@ -116,7 +114,7 @@ export function RegisterForm() {
               />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-2">
+          <CardFooter className="flex flex-col gap-2 mt-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Oppretter konto…" : "Opprett konto"}
             </Button>

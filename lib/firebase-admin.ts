@@ -6,9 +6,12 @@ function getFirebaseAdminApp(): App {
   if (apps.length > 0) {
     return apps[0] as App;
   }
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const projectId = process.env.AUTH_FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.AUTH_FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.AUTH_FIREBASE_PRIVATE_KEY?.replace(
+    /\\n/g,
+    "\n"
+  );
   if (!projectId || !clientEmail || !privateKey) {
     throw new Error(
       "Missing Firebase Admin env: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY"

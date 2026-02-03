@@ -89,7 +89,7 @@ export function LoginForm() {
               />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-2">
+          <CardFooter className="flex flex-col gap-2 mt-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Logger inn…" : "Logg inn"}
             </Button>
