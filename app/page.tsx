@@ -5,12 +5,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AuthCta } from "@/components/auth-cta";
-import {
-  FileUp,
-  Sparkles,
-  ListOrdered,
-  MessageSquare,
-} from "lucide-react";
+import { FileUp, Sparkles, ListOrdered, MessageSquare } from "lucide-react";
 
 export default function Home() {
   return (
@@ -51,7 +46,8 @@ export default function Home() {
                 </div>
                 <CardTitle>AI analyserer og matcher</CardTitle>
                 <CardDescription>
-                  CV-en struktureres og matches mot stillingsannonser i databasen.
+                  CV-en struktureres og matches mot stillingsannonser i
+                  databasen.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -73,7 +69,8 @@ export default function Home() {
                 </div>
                 <CardTitle>Hvorfor matchet det?</CardTitle>
                 <CardDescription>
-                  For hvert treff får du en forklaring på hvorfor stillingen passer.
+                  For hvert treff får du en forklaring på hvorfor stillingen
+                  passer.
                 </CardDescription>
               </CardHeader>
             </Card>
