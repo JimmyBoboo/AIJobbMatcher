@@ -1,11 +1,10 @@
-import Link from "next/link";
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { AuthCta } from "@/components/auth-cta";
 import {
   FileUp,
   Sparkles,
@@ -27,9 +26,7 @@ export default function Home() {
             matcher erfaring, ferdigheter og preferanser – uten manuelt søk og
             irrelevante treff.
           </p>
-          <Button asChild size="lg" className="mt-2">
-            <Link href="#">Last opp CV</Link>
-          </Button>
+          <AuthCta />
         </section>
 
         {/* Features */}
