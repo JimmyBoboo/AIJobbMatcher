@@ -1,5 +1,6 @@
 import { getApps, initializeApp, cert, type App } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 
 function getFirebaseAdminApp(): App {
   const apps = getApps();
@@ -17,11 +18,18 @@ function getFirebaseAdminApp(): App {
       "Missing Firebase Admin env: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY"
     );
   }
+  const storageBucket =
+    process.env.FIREBASE_STORAGE_BUCKET ?? `${projectId}.appspot.com`;
   return initializeApp({
     credential: cert({ projectId, clientEmail, privateKey }),
+    storageBucket,
   });
 }
 
 export function getAdminFirestore() {
   return getFirestore(getFirebaseAdminApp());
+}
+
+export function getAdminStorageBucket() {
+  return getStorage(getFirebaseAdminApp()).bucket();
 }
