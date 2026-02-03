@@ -1,29 +1,46 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { FirestoreAdapter } from "@auth/firebase-adapter";
+import { getAdminFirestore } from "@/lib/firebase-admin";
+import bcrypt from "bcryptjs";
+
+const USERS_COLLECTION = "users";
 
 const handler = NextAuth({
+  adapter: FirestoreAdapter({
+    firestore: getAdminFirestore(),
+  }),
   providers: [
     CredentialsProvider({
       id: "credentials",
       name: "Credentials",
       credentials: {
-        username: { label: "Brukernavn", type: "text" },
+        email: { label: "E-post", type: "email" },
         password: { label: "Passord", type: "password" },
       },
       async authorize(credentials) {
-        const username = process.env.AUTH_USERNAME ?? "demo";
-        const password = process.env.AUTH_PASSWORD ?? "demo";
-        if (
-          credentials?.username === username &&
-          credentials?.password === password
-        ) {
-          return {
-            id: "1",
-            name: credentials.username,
-            email: `${credentials.username}@example.com`,
-          };
-        }
-        return null;
+        if (!credentials?.email || !credentials?.password) return null;
+        const db = getAdminFirestore();
+        const snapshot = await db
+          .collection(USERS_COLLECTION)
+          .where("email", "==", credentials.email.toLowerCase().trim())
+          .limit(1)
+          .get();
+        const doc = snapshot.docs[0];
+        if (!doc?.exists) return null;
+        const data = doc.data();
+        const passwordHash = data.passwordHash as string | undefined;
+        if (!passwordHash) return null;
+        const valid = await bcrypt.compare(
+          credentials.password,
+          passwordHash
+        );
+        if (!valid) return null;
+        return {
+          id: doc.id,
+          email: data.email as string,
+          name: (data.name as string) ?? null,
+        };
       },
     }),
   ],

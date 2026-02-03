@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Card,
@@ -16,53 +15,56 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function LoginForm() {
+export function RegisterForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const urlError = searchParams.get("error");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitError(null);
-    setIsLoading(true);
-    const result = await signIn("credentials", {
-      email,
-      password,
-      callbackUrl: "/",
-      redirect: false,
-    });
-    setIsLoading(false);
-    if (result?.error) {
-      setSubmitError("Ugyldig e-post eller passord.");
+    setError(null);
+    if (password !== passwordConfirm) {
+      setError("Passordene matcher ikke.");
       return;
     }
-    if (result?.ok) {
-      router.push("/");
-      router.refresh();
+    setIsLoading(true);
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        password,
+        passwordConfirm,
+        name: name || undefined,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setIsLoading(false);
+    if (!res.ok) {
+      setError((data.error as string) || "Noe gikk galt.");
+      return;
     }
+    router.push("/login");
+    router.refresh();
   }
-
-  const error = urlError || submitError;
 
   return (
     <div className="flex min-h-screen items-center justify-center px-6 py-12">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Logg inn</CardTitle>
+          <CardTitle>Opprett konto</CardTitle>
           <CardDescription>
-            Skriv inn e-post og passord for å logge inn.
+            Fyll inn e-post og passord for å registrere deg.
           </CardDescription>
         </CardHeader>
         <form onSubmit={onSubmit}>
           <CardContent className="flex flex-col gap-4">
             {error && (
-              <p className="text-sm text-destructive">
-                Ugyldig e-post eller passord.
-              </p>
+              <p className="text-sm text-destructive">{error}</p>
             )}
             <div className="grid gap-2">
               <Label htmlFor="email">E-post</Label>
@@ -77,24 +79,49 @@ export function LoginForm() {
               />
             </div>
             <div className="grid gap-2">
+              <Label htmlFor="name">Navn (valgfritt)</Label>
+              <Input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ditt navn"
+                autoComplete="name"
+              />
+            </div>
+            <div className="grid gap-2">
               <Label htmlFor="password">Passord</Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Passord"
+                placeholder="Minst 8 tegn"
                 required
-                autoComplete="current-password"
+                minLength={8}
+                autoComplete="new-password"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="passwordConfirm">Bekreft passord</Label>
+              <Input
+                id="passwordConfirm"
+                type="password"
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+                placeholder="Gjenta passord"
+                required
+                minLength={8}
+                autoComplete="new-password"
               />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-2">
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Logger inn…" : "Logg inn"}
+              {isLoading ? "Oppretter konto…" : "Opprett konto"}
             </Button>
             <Button asChild variant="ghost" size="sm" className="w-full">
-              <Link href="/register">Opprett konto</Link>
+              <Link href="/login">Har du konto? Logg inn</Link>
             </Button>
             <Button asChild variant="ghost" size="sm" className="w-full">
               <Link href="/">Tilbake</Link>
