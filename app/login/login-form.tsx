@@ -32,7 +32,7 @@ export function LoginForm() {
     const result = await signIn("credentials", {
       email,
       password,
-      callbackUrl: "/",
+      callbackUrl: "/dashboard",
       redirect: false,
     });
     setIsLoading(false);
@@ -41,7 +41,7 @@ export function LoginForm() {
       return;
     }
     if (result?.ok) {
-      router.push("/");
+      router.push("/dashboard");
       router.refresh();
     }
   }
