@@ -16,9 +16,11 @@ type UploadStatus = "idle" | "uploading" | "success" | "error";
 
 interface CVUploadProps {
   onParsed?: (data: CVData) => void;
+  /** Når true: kun knapp for å erstatte CV (ingen stor opplastingskort) */
+  compact?: boolean;
 }
 
-export function CVUpload({ onParsed }: CVUploadProps) {
+export function CVUpload({ onParsed, compact = false }: CVUploadProps) {
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [cvData, setCvData] = useState<CVData | null>(null);
@@ -72,6 +74,9 @@ export function CVUpload({ onParsed }: CVUploadProps) {
       setCvData(data);
       setStatus("success");
       onParsed?.(data);
+      if (compact) {
+        handleReset();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Kunne ikke laste opp CV");
       setStatus("error");
@@ -101,6 +106,46 @@ export function CVUpload({ onParsed }: CVUploadProps) {
     setCvData(null);
     setFileName(null);
   };
+
+  if (compact) {
+    return (
+      <div className="flex flex-col gap-2">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf"
+          onChange={handleFileSelect}
+          className="hidden"
+          aria-hidden
+        />
+        {status === "idle" && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <FileUp className="size-4 shrink-0" />
+            Last opp ny CV
+          </Button>
+        )}
+        {status === "uploading" && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" />
+            Analyserer CV…
+          </div>
+        )}
+        {status === "error" && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-destructive text-sm">{error}</span>
+            <Button variant="outline" size="sm" onClick={handleReset}>
+              Prøv igjen
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <Card>
