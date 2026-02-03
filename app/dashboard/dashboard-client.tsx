@@ -1,8 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { CVUpload } from "@/components/cv-upload";
 import { CvDataView } from "@/components/cv-data-view";
 import type { CVData } from "@/lib/schemas/cv";
@@ -56,29 +64,34 @@ export function DashboardClient() {
 
   return (
     <div className="mt-6 flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div>
         <p className="text-muted-foreground">Logget inn som {displayName}</p>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => signOut({ callbackUrl: "/" })}
-        >
-          Logg ut
-        </Button>
       </div>
 
-      {cvLoading && (
-        <p className="text-muted-foreground text-sm">Laster CV…</p>
-      )}
+      {cvLoading && <p className="text-muted-foreground text-sm">Laster CV…</p>}
       {!cvLoading && parsedCV && (
         <>
           <CvDataView cvData={parsedCV} title="Din CV" />
           <CVUpload onParsed={handleCVParsed} compact />
         </>
       )}
-      {!cvLoading && !parsedCV && (
-        <CVUpload onParsed={handleCVParsed} />
-      )}
+      {!cvLoading && !parsedCV && <CVUpload onParsed={handleCVParsed} />}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Søk etter jobber</CardTitle>
+          <CardDescription>
+            Utforsk aktive stillinger fra NAV som matcher din profil
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link href="/jobs">
+            <Button className="w-full" size="lg">
+              Se tilgjengelige stillinger
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
     </div>
   );
 }
