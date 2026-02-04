@@ -2,15 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { CVUpload } from "@/components/cv-upload";
 import { CvDataView } from "@/components/cv-data-view";
 import type { CVData } from "@/lib/schemas/cv";
@@ -76,22 +67,6 @@ export function DashboardClient() {
         </>
       )}
       {!cvLoading && !parsedCV && <CVUpload onParsed={handleCVParsed} />}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Søk etter jobber</CardTitle>
-          <CardDescription>
-            Utforsk aktive stillinger fra NAV som matcher din profil
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Link href="/jobs">
-            <Button className="w-full" size="lg">
-              Se tilgjengelige stillinger
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
     </div>
   );
 }
