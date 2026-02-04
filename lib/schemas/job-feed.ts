@@ -7,6 +7,8 @@ export const feedEntrySchema = z.object({
   businessName: z.string().optional(),
   municipal: z.string().optional(),
   sistEndret: z.string().optional(),
+  companyLogoUrl: z.string().url().optional(),
+  skills: z.array(z.string()).optional(),
 });
 
 export const jobItemSchema = z.object({

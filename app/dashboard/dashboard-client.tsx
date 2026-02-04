@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { CVUpload } from "@/components/cv-upload";
 import { CvDataView } from "@/components/cv-data-view";
+import { RelevantJobsSection } from "@/components/relevant-jobs-section";
+import { Button } from "@/components/ui/button";
 import type { CVData } from "@/lib/schemas/cv";
 
 export function DashboardClient() {
@@ -55,18 +58,33 @@ export function DashboardClient() {
 
   return (
     <div className="mt-6 flex flex-col gap-6">
-      <div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-muted-foreground">Logget inn som {displayName}</p>
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/jobs">Se alle stillinger</Link>
+        </Button>
       </div>
 
-      {cvLoading && <p className="text-muted-foreground text-sm">Laster CV…</p>}
-      {!cvLoading && parsedCV && (
-        <>
-          <CvDataView cvData={parsedCV} title="Din CV" />
-          <CVUpload onParsed={handleCVParsed} compact />
-        </>
-      )}
-      {!cvLoading && !parsedCV && <CVUpload onParsed={handleCVParsed} />}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
+        <div className="flex flex-col gap-6">
+          {cvLoading && (
+            <p className="text-muted-foreground text-sm">Laster CV…</p>
+          )}
+          {!cvLoading && parsedCV && (
+            <>
+              <CvDataView cvData={parsedCV} title="Din CV" />
+              <CVUpload onParsed={handleCVParsed} compact />
+            </>
+          )}
+          {!cvLoading && !parsedCV && (
+            <CVUpload onParsed={handleCVParsed} />
+          )}
+        </div>
+
+        <div className="lg:min-w-0">
+          <RelevantJobsSection cvData={parsedCV ?? null} />
+        </div>
+      </div>
     </div>
   );
 }

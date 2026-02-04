@@ -48,6 +48,28 @@ export function Navbar() {
               >
                 Stillinger
               </Link>
+              <Link
+                href="/profile"
+                className={cn(
+                  "transition-colors hover:text-foreground/80",
+                  pathname === "/profile"
+                    ? "text-foreground font-medium"
+                    : "text-foreground/60"
+                )}
+              >
+                Profil
+              </Link>
+              <Link
+                href="/about"
+                className={cn(
+                  "transition-colors hover:text-foreground/80",
+                  pathname === "/about"
+                    ? "text-foreground font-medium"
+                    : "text-foreground/60"
+                )}
+              >
+                Om oss
+              </Link>
             </nav>
           )}
         </div>
