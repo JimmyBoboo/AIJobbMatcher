@@ -18,6 +18,11 @@ const MOCK_JOBS: JobItem[] = [
       companyLogoUrl:
         "https://ui-avatars.com/api/?name=Tech+Solutions&size=96&background=0ea5e9&color=fff",
       skills: ["JavaScript", "TypeScript", "React", "Git", "Agile"],
+      bransje: "IT og programvare",
+      arbeidssprak: ["Norsk", "Engelsk"],
+      ansettelsesform: "Fast stilling",
+      heltidDeltid: "Heltid",
+      sektor: "Privat",
     },
   },
   {
@@ -37,6 +42,11 @@ const MOCK_JOBS: JobItem[] = [
       companyLogoUrl:
         "https://ui-avatars.com/api/?name=Digital+Byra&size=96&background=8b5cf6&color=fff",
       skills: ["React", "TypeScript", "CSS", "Next.js", "Brukeropplevelse"],
+      bransje: "Markedsføring og reklame",
+      arbeidssprak: ["Norsk"],
+      ansettelsesform: "Fast stilling",
+      heltidDeltid: "Heltid",
+      sektor: "Privat",
     },
   },
   {
@@ -56,6 +66,11 @@ const MOCK_JOBS: JobItem[] = [
       companyLogoUrl:
         "https://ui-avatars.com/api/?name=DataTech&size=96&background=ec4899&color=fff",
       skills: ["Node.js", "Java", "API-design", "Databaser", "SQL"],
+      bransje: "IT og programvare",
+      arbeidssprak: ["Norsk", "Engelsk"],
+      ansettelsesform: "Fast stilling",
+      heltidDeltid: "Heltid",
+      sektor: "Privat",
     },
   },
   {
@@ -75,6 +90,11 @@ const MOCK_JOBS: JobItem[] = [
       companyLogoUrl:
         "https://ui-avatars.com/api/?name=Design+Studio&size=96&background=f59e0b&color=fff",
       skills: ["Figma", "Brukerresearch", "Wireframing", "Prototyping", "Designsystemer"],
+      bransje: "Design og kreative yrker",
+      arbeidssprak: ["Norsk", "Engelsk"],
+      ansettelsesform: "Fast stilling",
+      heltidDeltid: "Heltid",
+      sektor: "Privat",
     },
   },
   {
@@ -94,6 +114,11 @@ const MOCK_JOBS: JobItem[] = [
       companyLogoUrl:
         "https://ui-avatars.com/api/?name=Offentlig+IT&size=96&background=059669&color=fff",
       skills: ["React", ".NET", "C#", "Azure", "Scrum"],
+      bransje: "IT og programvare",
+      arbeidssprak: ["Norsk"],
+      ansettelsesform: "Fast stilling",
+      heltidDeltid: "Heltid",
+      sektor: "Offentlig",
     },
   },
   {
@@ -113,6 +138,11 @@ const MOCK_JOBS: JobItem[] = [
       companyLogoUrl:
         "https://ui-avatars.com/api/?name=Cloud+First&size=96&background=0369a1&color=fff",
       skills: ["AWS", "Azure", "Kubernetes", "CI/CD", "Terraform"],
+      bransje: "IT og programvare",
+      arbeidssprak: ["Norsk", "Engelsk"],
+      ansettelsesform: "Fast stilling",
+      heltidDeltid: "Heltid",
+      sektor: "Privat",
     },
   },
   {
@@ -132,6 +162,11 @@ const MOCK_JOBS: JobItem[] = [
       companyLogoUrl:
         "https://ui-avatars.com/api/?name=Analytics+Nordic&size=96&background=7c3aed&color=fff",
       skills: ["SQL", "Python", "Power BI", "Dataanalyse", "Excel"],
+      bransje: "Konsulent og rådgiving",
+      arbeidssprak: ["Norsk", "Engelsk"],
+      ansettelsesform: "Fast stilling",
+      heltidDeltid: "Heltid",
+      sektor: "Privat",
     },
   },
   {
@@ -151,6 +186,11 @@ const MOCK_JOBS: JobItem[] = [
       companyLogoUrl:
         "https://ui-avatars.com/api/?name=SaaS+Norge&size=96&background=be185d&color=fff",
       skills: ["Produktledelse", "Backlog", "Roadmap", "Jira", "Stakeholdere"],
+      bransje: "IT og programvare",
+      arbeidssprak: ["Norsk", "Engelsk"],
+      ansettelsesform: "Fast stilling",
+      heltidDeltid: "Heltid",
+      sektor: "Privat",
     },
   },
   {
@@ -170,6 +210,11 @@ const MOCK_JOBS: JobItem[] = [
       companyLogoUrl:
         "https://ui-avatars.com/api/?name=Mobil+First&size=96&background=0d9488&color=fff",
       skills: ["React Native", "Flutter", "iOS", "Android", "REST API"],
+      bransje: "IT og programvare",
+      arbeidssprak: ["Norsk", "Engelsk"],
+      ansettelsesform: "Vikariat",
+      heltidDeltid: "Heltid",
+      sektor: "Privat",
     },
   },
   {
@@ -189,6 +234,11 @@ const MOCK_JOBS: JobItem[] = [
       companyLogoUrl:
         "https://ui-avatars.com/api/?name=SecureIT&size=96&background=dc2626&color=fff",
       skills: ["Informasjonssikkerhet", "Risikovurdering", "CISSP", "Penetrasjonstesting"],
+      bransje: "IT og programvare",
+      arbeidssprak: ["Norsk", "Engelsk"],
+      ansettelsesform: "Fast stilling",
+      heltidDeltid: "Heltid",
+      sektor: "Privat",
     },
   },
   {
@@ -208,6 +258,11 @@ const MOCK_JOBS: JobItem[] = [
       companyLogoUrl:
         "https://ui-avatars.com/api/?name=Agile+Works&size=96&background=4f46e5&color=fff",
       skills: ["Scrum", "Kanban", "Facilitering", "Retrospektiv", "Jira"],
+      bransje: "Konsulent og rådgiving",
+      arbeidssprak: ["Norsk"],
+      ansettelsesform: "Fast stilling",
+      heltidDeltid: "Deltid",
+      sektor: "Privat",
     },
   },
   {
@@ -227,9 +282,18 @@ const MOCK_JOBS: JobItem[] = [
       companyLogoUrl:
         "https://ui-avatars.com/api/?name=Quality+Labs&size=96&background=ca8a04&color=fff",
       skills: ["Manuell testing", "Automatisert testing", "Selenium", "Teststrategi", "QA"],
+      bransje: "IT og programvare",
+      arbeidssprak: ["Norsk", "Engelsk"],
+      ansettelsesform: "Fast stilling",
+      heltidDeltid: "Heltid",
+      sektor: "Privat",
     },
   },
 ];
+
+export function getAllMockJobs(): JobItem[] {
+  return [...MOCK_JOBS];
+}
 
 export function getMockPaginatedJobs(
   page: number,

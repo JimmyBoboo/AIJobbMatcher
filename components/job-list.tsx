@@ -68,6 +68,8 @@ export interface JobsListContentProps {
   totalItems: number;
   currentPage: number;
   onPageChange: (page: number) => void;
+  selectedJobId?: string | null;
+  onSelectJob?: (job: JobItem) => void;
 }
 
 export function JobsListContent({
@@ -76,6 +78,8 @@ export function JobsListContent({
   totalItems,
   currentPage,
   onPageChange,
+  selectedJobId = null,
+  onSelectJob,
 }: JobsListContentProps) {
   const visiblePages = getVisiblePages(currentPage, totalPages);
 
@@ -90,7 +94,12 @@ export function JobsListContent({
           <>
             <ul className="flex flex-col gap-3">
               {items.map((job) => (
-                <JobCard key={job._feed_entry.uuid} job={job} />
+                <JobCard
+                  key={job._feed_entry.uuid}
+                  job={job}
+                  selectedJobId={selectedJobId}
+                  onSelectJob={onSelectJob}
+                />
               ))}
             </ul>
 
@@ -161,7 +170,13 @@ export function JobsListContent({
   );
 }
 
-export function JobCard({ job }: { job: JobItem }) {
+export interface JobCardProps {
+  job: JobItem;
+  selectedJobId?: string | null;
+  onSelectJob?: (job: JobItem) => void;
+}
+
+export function JobCard({ job, selectedJobId = null, onSelectJob }: JobCardProps) {
   const entry = job._feed_entry;
   const excerpt = job.content_text
     ? job.content_text.split(/[.!?]/).filter(Boolean)[0]?.trim()
@@ -170,9 +185,33 @@ export function JobCard({ job }: { job: JobItem }) {
     excerpt && job.content_text && excerpt.length < job.content_text.length
       ? `${excerpt}.`
       : excerpt;
+  const isSelected = selectedJobId === entry.uuid;
+  const isSelectable = typeof onSelectJob === "function";
+
+  const handleCardClick = () => {
+    if (isSelectable) onSelectJob(job);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isSelectable) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onSelectJob(job);
+    }
+  };
 
   return (
-    <li className="rounded-lg border bg-card hover:bg-accent/50 transition-colors p-5">
+    <li
+      role={isSelectable ? "button" : undefined}
+      tabIndex={isSelectable ? 0 : undefined}
+      onClick={isSelectable ? handleCardClick : undefined}
+      onKeyDown={isSelectable ? handleKeyDown : undefined}
+      className={`rounded-lg border bg-card transition-colors p-5 ${
+        isSelected
+          ? "ring-2 ring-primary border-primary"
+          : "hover:bg-accent/50"
+      } ${isSelectable ? "cursor-pointer" : ""}`}
+    >
       <div className="flex gap-4">
         {entry.companyLogoUrl && (
           <div className="size-12 shrink-0 overflow-hidden rounded-lg border bg-muted">
@@ -199,6 +238,28 @@ export function JobCard({ job }: { job: JobItem }) {
               {excerptWithSuffix}
             </p>
           )}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            {entry.bransje && (
+              <span title="Bransje">{entry.bransje}</span>
+            )}
+            {entry.arbeidssprak && entry.arbeidssprak.length > 0 && (
+              <span title="Arbeidsspråk">
+                {entry.arbeidssprak.join(", ")}
+              </span>
+            )}
+            {entry.ansettelsesform && (
+              <span title="Ansettelsesform">{entry.ansettelsesform}</span>
+            )}
+            {entry.municipal && (
+              <span title="Område">{entry.municipal}</span>
+            )}
+            {entry.heltidDeltid && (
+              <span title="Heltid/deltid">{entry.heltidDeltid}</span>
+            )}
+            {entry.sektor && (
+              <span title="Sektor">{entry.sektor}</span>
+            )}
+          </div>
           {entry.skills && entry.skills.length > 0 && (
             <div>
               <p className="text-xs font-medium text-muted-foreground mb-1">
@@ -222,12 +283,22 @@ export function JobCard({ job }: { job: JobItem }) {
               </span>
             )}
           </div>
-          <div className="mt-3">
-            <Button variant="outline" size="sm" asChild>
-              <Link href={job.url} target="_blank" rel="noopener noreferrer">
+          <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+            {onSelectJob ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onSelectJob(job)}
+              >
                 Se stilling
-              </Link>
-            </Button>
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" asChild>
+                <Link href={job.url} target="_blank" rel="noopener noreferrer">
+                  Se stilling
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
       </div>

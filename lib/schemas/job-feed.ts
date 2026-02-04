@@ -9,6 +9,11 @@ export const feedEntrySchema = z.object({
   sistEndret: z.string().optional(),
   companyLogoUrl: z.string().url().optional(),
   skills: z.array(z.string()).optional(),
+  bransje: z.string().optional(),
+  arbeidssprak: z.array(z.string()).optional(),
+  ansettelsesform: z.string().optional(),
+  heltidDeltid: z.string().optional(),
+  sektor: z.string().optional(),
 });
 
 export const jobItemSchema = z.object({
