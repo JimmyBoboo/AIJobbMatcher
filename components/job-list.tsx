@@ -63,7 +63,7 @@ export function JobList() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const { data, error, isLoading } = useSWR<PaginatedJobsResponse>(
-    `/api/jobs?page=${currentPage}&limit=${ITEMS_PER_PAGE}`,
+    `/api/jobs`,
     fetcher,
     {
       revalidateOnFocus: false,
@@ -73,6 +73,8 @@ export function JobList() {
       keepPreviousData: true, // Keep showing old data while fetching new page
     }
   );
+
+  console.log({ data });
 
   const jobs = data?.items ?? [];
   const totalPages = data?.totalPages ?? 1;
