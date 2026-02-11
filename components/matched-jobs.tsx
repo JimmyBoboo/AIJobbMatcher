@@ -4,9 +4,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
-  Loader2,
   ExternalLink,
   MapPin,
   Briefcase,
@@ -157,14 +157,29 @@ export function MatchedJobs({
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="flex flex-col items-center gap-3 py-10">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">
-            Analyserer CV-en og finner de beste matchene...
-          </p>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-9 w-28 rounded-md" />
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="flex min-w-0 flex-col rounded-xl border-2 border-border p-4"
+            >
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <Skeleton className="mt-3 h-4 w-full" />
+              <Skeleton className="mt-1 h-3 w-3/4" />
+              <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-3 w-14" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     );
   }
 
