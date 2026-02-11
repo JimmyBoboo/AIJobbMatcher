@@ -137,8 +137,8 @@ export function JobList() {
         ) : (
           <>
             <ul className="flex flex-col gap-3">
-              {jobs.map((job) => (
-                <JobCard key={job._feed_entry.uuid} job={job} />
+              {jobs.map((job, i) => (
+                <JobCard key={`${job._feed_entry.uuid}-${i}`} job={job} />
               ))}
             </ul>
 
