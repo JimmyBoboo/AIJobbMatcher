@@ -5,6 +5,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AuthCta } from "@/components/auth-cta";
+import { Footer } from "@/components/footer";
 import { FileUp, Sparkles, ListOrdered, MessageSquare } from "lucide-react";
 
 export default function Home() {
@@ -77,6 +78,7 @@ export default function Home() {
           </div>
         </section>
       </main>
+      <Footer />
     </div>
   );
 }

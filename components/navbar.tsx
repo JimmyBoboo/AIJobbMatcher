@@ -13,6 +13,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 export function Navbar() {
@@ -107,6 +108,9 @@ export function Navbar() {
                     >
                       Stillinger
                     </Link>
+                    <div className="flex items-center gap-1 pt-2">
+                      <ThemeToggle />
+                    </div>
                     <Button
                       variant="ghost"
                       className="justify-start rounded-lg px-3 py-2 text-sm font-medium text-foreground/80 hover:bg-muted"
@@ -121,14 +125,17 @@ export function Navbar() {
           )}
         </div>
         {isAuthenticated && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => signOut({ callbackUrl: "/" })}
-            className="hidden md:inline-flex"
-          >
-            Logg ut
-          </Button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="hidden md:inline-flex"
+            >
+              Logg ut
+            </Button>
+          </div>
         )}
       </div>
     </header>
