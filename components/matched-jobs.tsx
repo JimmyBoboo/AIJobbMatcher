@@ -7,6 +7,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
+  Calendar,
   ExternalLink,
   MapPin,
   Briefcase,
@@ -24,6 +25,39 @@ interface MatchedJobsProps {
   onSearch: () => void;
 }
 
+const RECENT_DAYS = 7;
+const absoluteDateOptions: Intl.DateTimeFormatOptions = {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+};
+
+function parseDate(value: string | undefined | null): Date | null {
+  if (value == null || String(value).trim() === "") return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function formatApplicationDue(value: string | undefined | null): string | null {
+  const date = parseDate(value);
+  if (date) return date.toLocaleDateString("nb-NO", absoluteDateOptions);
+  return value && String(value).trim() ? value : null;
+}
+
+function formatPublished(value: string | undefined | null): string | null {
+  const date = parseDate(value);
+  if (!date) return value && String(value).trim() ? value : null;
+  const now = new Date();
+  const daysDiff = Math.floor(
+    (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+  );
+  if (daysDiff >= 0 && daysDiff <= RECENT_DAYS) {
+    const rtf = new Intl.RelativeTimeFormat("nb-NO", { style: "long" });
+    return rtf.format(-daysDiff, "day");
+  }
+  return date.toLocaleDateString("nb-NO", absoluteDateOptions);
+}
+
 const MEDAL_STYLES = [
   { bg: "bg-yellow-500", text: "text-yellow-50", ring: "ring-yellow-400/30", label: "1." },
   { bg: "bg-gray-400", text: "text-gray-50", ring: "ring-gray-300/30", label: "2." },
@@ -33,6 +67,8 @@ const MEDAL_STYLES = [
 function PodiumCard({ job, rank }: { job: PineconeJobRecord; rank: number }) {
   const style = MEDAL_STYLES[rank];
   const isGold = rank === 0;
+  const formattedPublished = formatPublished(job.published);
+  const formattedDue = formatApplicationDue(job.application_due);
 
   return (
     <a
@@ -74,10 +110,16 @@ function PodiumCard({ job, rank }: { job: PineconeJobRecord; rank: number }) {
             {job.engagement_type}
           </span>
         )}
-        {job.application_due && (
+        {formattedPublished && (
+          <span className="inline-flex items-center gap-0.5">
+            <Calendar className="h-3 w-3" />
+            {formattedPublished}
+          </span>
+        )}
+        {formattedDue && (
           <span className="inline-flex items-center gap-0.5">
             <Clock className="h-3 w-3" />
-            {job.application_due}
+            {formattedDue}
           </span>
         )}
       </div>
@@ -90,6 +132,9 @@ function PodiumCard({ job, rank }: { job: PineconeJobRecord; rank: number }) {
 }
 
 function ListRow({ job, rank }: { job: PineconeJobRecord; rank: number }) {
+  const formattedPublished = formatPublished(job.published);
+  const formattedDue = formatApplicationDue(job.application_due);
+
   return (
     <a
       href={job.source_url || undefined}
@@ -113,10 +158,16 @@ function ListRow({ job, rank }: { job: PineconeJobRecord; rank: number }) {
             {job.location}
           </span>
         )}
-        {job.application_due && (
+        {formattedPublished && (
+          <span className="inline-flex items-center gap-0.5">
+            <Calendar className="h-3 w-3" />
+            {formattedPublished}
+          </span>
+        )}
+        {formattedDue && (
           <span className="inline-flex items-center gap-0.5">
             <Clock className="h-3 w-3" />
-            {job.application_due}
+            {formattedDue}
           </span>
         )}
       </div>
