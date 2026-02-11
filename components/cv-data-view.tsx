@@ -19,7 +19,7 @@ export function CvDataView({
 
   return (
     <div className="rounded-lg border bg-card text-card-foreground">
-      <div className="flex items-center gap-3 px-4 py-3">
+      <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-3">
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
@@ -29,12 +29,12 @@ export function CvDataView({
             <User className="h-4 w-4 text-primary" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium leading-tight">
+            <p className="truncate text-sm font-medium leading-tight">
               {cvData.personalInfo.name}
             </p>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
               {cvData.personalInfo.location && (
-                <span className="inline-flex items-center gap-0.5">
+                <span className="inline-flex shrink-0 items-center gap-0.5">
                   <MapPin className="h-3 w-3" />
                   {cvData.personalInfo.location}
                 </span>
@@ -55,7 +55,9 @@ export function CvDataView({
           )}
         </button>
         {actions && (
-          <div className="shrink-0 border-l pl-3">{actions}</div>
+          <div className="shrink-0 border-t pt-3 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-3">
+            {actions}
+          </div>
         )}
       </div>
 

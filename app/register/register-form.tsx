@@ -53,7 +53,7 @@ export function RegisterForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-6 py-12">
+    <div className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Opprett konto</CardTitle>

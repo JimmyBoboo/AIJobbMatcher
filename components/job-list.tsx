@@ -74,8 +74,6 @@ export function JobList() {
     }
   );
 
-  console.log({ data });
-
   const jobs = data?.items ?? [];
   const totalPages = data?.totalPages ?? 1;
   const totalItems = data?.totalItems ?? 0;
@@ -213,15 +211,17 @@ function JobCard({ job }: { job: JobItem }) {
   const entry = job._feed_entry;
 
   return (
-    <li className="rounded-lg border bg-card hover:bg-accent/50 transition-colors p-5">
-      <div className="flex flex-col gap-2">
-        <h3 className="font-semibold text-base leading-tight">{entry.title}</h3>
+    <li className="min-w-0 rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50 sm:p-5">
+      <div className="flex min-w-0 flex-col gap-2">
+        <h3 className="break-words font-semibold text-base leading-tight line-clamp-2">
+          {entry.title}
+        </h3>
         {entry.businessName && (
-          <p className="text-sm text-muted-foreground font-medium">
+          <p className="break-words text-sm font-medium text-muted-foreground line-clamp-1">
             {entry.businessName}
           </p>
         )}
-        <div className="flex items-center gap-2 mt-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 mt-1">
           {entry.municipal && (
             <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
               {entry.municipal}

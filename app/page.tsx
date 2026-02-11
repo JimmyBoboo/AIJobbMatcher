@@ -10,7 +10,7 @@ import { FileUp, Sparkles, ListOrdered, MessageSquare } from "lucide-react";
 export default function Home() {
   return (
     <div className="min-h-screen bg-background font-sans">
-      <main className="mx-auto max-w-4xl px-6 py-16 sm:py-24">
+      <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-24">
         {/* Hero */}
         <section className="flex flex-col items-center gap-8 text-center">
           <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">

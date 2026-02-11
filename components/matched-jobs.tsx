@@ -39,7 +39,7 @@ function PodiumCard({ job, rank }: { job: PineconeJobRecord; rank: number }) {
       href={job.source_url || undefined}
       target="_blank"
       rel="noopener noreferrer"
-      className={`group relative flex flex-col rounded-xl border-2 p-4 transition-all hover:shadow-md ${
+      className={`group relative flex min-w-0 flex-col rounded-xl border-2 p-4 transition-all hover:shadow-md ${
         isGold
           ? "border-yellow-400/50 bg-yellow-50/50 dark:border-yellow-500/30 dark:bg-yellow-950/20"
           : "border-border bg-card hover:border-muted-foreground/30"
@@ -51,13 +51,15 @@ function PodiumCard({ job, rank }: { job: PineconeJobRecord; rank: number }) {
         >
           {style.label}
         </div>
-        {isGold && <Trophy className="h-4 w-4 text-yellow-500" />}
+        {isGold && <Trophy className="h-4 w-4 shrink-0 text-yellow-500" />}
       </div>
 
-      <h3 className={`font-semibold leading-tight ${isGold ? "text-base" : "text-sm"}`}>
-        {job.title}
-      </h3>
-      <p className="mt-1 text-sm text-muted-foreground">{job.employer}</p>
+      <div className="min-w-0 flex-1">
+        <h3 className={`font-semibold leading-tight line-clamp-2 ${isGold ? "text-base" : "text-sm"}`}>
+          {job.title}
+        </h3>
+        <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">{job.employer}</p>
+      </div>
 
       <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
         {job.location && (
@@ -200,13 +202,13 @@ export function MatchedJobs({
   return (
     <div className="flex flex-col gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-semibold">Topp {matches.length} matcher</h2>
         <Button
           variant="outline"
           onClick={onSearch}
           size="sm"
-          className="gap-1.5"
+          className="w-fit gap-1.5"
         >
           <Search className="h-3.5 w-3.5" />
           Søk på nytt
@@ -214,7 +216,7 @@ export function MatchedJobs({
       </div>
 
       {/* Podium — top 3 */}
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
         {podium.map((job, i) => (
           <PodiumCard key={job._id} job={job} rank={i} />
         ))}
