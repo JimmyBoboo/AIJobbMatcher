@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -15,6 +18,7 @@ import {
   Search,
   Trophy,
 } from "lucide-react";
+import { JobSummaryDialog } from "@/components/job-summary-dialog";
 import type { PineconeJobRecord } from "@/lib/schemas/job-feed";
 
 interface MatchedJobsProps {
@@ -64,18 +68,25 @@ const MEDAL_STYLES = [
   { bg: "bg-amber-700", text: "text-amber-50", ring: "ring-amber-600/30", label: "3." },
 ] as const;
 
-function PodiumCard({ job, rank }: { job: PineconeJobRecord; rank: number }) {
+function PodiumCard({
+  job,
+  rank,
+  onJobClick,
+}: {
+  job: PineconeJobRecord;
+  rank: number;
+  onJobClick: (job: PineconeJobRecord) => void;
+}) {
   const style = MEDAL_STYLES[rank];
   const isGold = rank === 0;
   const formattedPublished = formatPublished(job.published);
   const formattedDue = formatApplicationDue(job.application_due);
 
   return (
-    <a
-      href={job.source_url || undefined}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`group relative flex min-w-0 flex-col rounded-xl border-2 p-4 transition-all hover:shadow-md ${
+    <button
+      type="button"
+      onClick={() => onJobClick(job)}
+      className={`group relative flex min-w-0 flex-col rounded-xl border-2 p-4 text-left transition-all hover:shadow-md cursor-pointer ${
         isGold
           ? "border-yellow-400/50 bg-yellow-50/50 dark:border-yellow-500/30 dark:bg-yellow-950/20"
           : "border-border bg-card hover:border-muted-foreground/30"
@@ -127,20 +138,27 @@ function PodiumCard({ job, rank }: { job: PineconeJobRecord; rank: number }) {
       <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
         Se annonse <ExternalLink className="h-3 w-3" />
       </span>
-    </a>
+    </button>
   );
 }
 
-function ListRow({ job, rank }: { job: PineconeJobRecord; rank: number }) {
+function ListRow({
+  job,
+  rank,
+  onJobClick,
+}: {
+  job: PineconeJobRecord;
+  rank: number;
+  onJobClick: (job: PineconeJobRecord) => void;
+}) {
   const formattedPublished = formatPublished(job.published);
   const formattedDue = formatApplicationDue(job.application_due);
 
   return (
-    <a
-      href={job.source_url || undefined}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group flex items-center gap-3 rounded-lg border px-4 py-3 transition-colors hover:bg-muted/50"
+    <button
+      type="button"
+      onClick={() => onJobClick(job)}
+      className="group flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors hover:bg-muted/50 cursor-pointer"
     >
       <span className="w-5 text-center text-sm font-semibold text-muted-foreground">
         {rank}
@@ -172,7 +190,7 @@ function ListRow({ job, rank }: { job: PineconeJobRecord; rank: number }) {
         )}
       </div>
       <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-    </a>
+    </button>
   );
 }
 
@@ -183,6 +201,19 @@ export function MatchedJobs({
   hasSearched,
   onSearch,
 }: MatchedJobsProps) {
+  const [selectedJob, setSelectedJob] = useState<PineconeJobRecord | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleJobClick = (job: PineconeJobRecord) => {
+    setSelectedJob(job);
+    setDialogOpen(true);
+  };
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) setSelectedJob(null);
+  };
+
   // Initial state: no search has been triggered yet
   if (!isLoading && !error && !hasSearched) {
     return (
@@ -284,7 +315,12 @@ export function MatchedJobs({
       {/* Podium — top 3 */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
         {podium.map((job, i) => (
-          <PodiumCard key={job._id} job={job} rank={i} />
+          <PodiumCard
+            key={job._id}
+            job={job}
+            rank={i}
+            onJobClick={handleJobClick}
+          />
         ))}
       </div>
 
@@ -298,11 +334,22 @@ export function MatchedJobs({
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
             {rest.map((job, i) => (
-              <ListRow key={job._id} job={job} rank={i + 4} />
+              <ListRow
+                key={job._id}
+                job={job}
+                rank={i + 4}
+                onJobClick={handleJobClick}
+              />
             ))}
           </CardContent>
         </Card>
       )}
+
+      <JobSummaryDialog
+        open={dialogOpen}
+        onOpenChange={handleDialogOpenChange}
+        job={selectedJob}
+      />
     </div>
   );
 }

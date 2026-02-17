@@ -171,6 +171,7 @@ Regler:
         "published",
         "application_due",
         "source_url",
+        "content",
       ],
     });
 
@@ -189,6 +190,7 @@ Regler:
           published: f.published ?? "",
           application_due: f.application_due ?? "",
           source_url: f.source_url ?? "",
+          content: f.content ?? undefined,
         };
       }
     );
