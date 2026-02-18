@@ -172,6 +172,7 @@ Regler:
         "application_due",
         "source_url",
         "content",
+        "nav_feed_path",
       ],
     });
 
@@ -191,6 +192,7 @@ Regler:
           application_due: f.application_due ?? "",
           source_url: f.source_url ?? "",
           content: f.content ?? undefined,
+          nav_feed_path: f.nav_feed_path ?? undefined,
         };
       }
     );

@@ -53,6 +53,8 @@ export const pineconeJobRecordSchema = z.object({
   application_due: z.string(),
   source_url: z.string(),
   content: z.string().optional(),
+  /** Relative path for NAV PAM feed detail (e.g. api/v1/vacancies/{uuid}) */
+  nav_feed_path: z.string().optional(),
 });
 
 export type PineconeJobRecord = z.infer<typeof pineconeJobRecordSchema>;
@@ -60,4 +62,24 @@ export type PineconeJobRecord = z.infer<typeof pineconeJobRecordSchema>;
 export interface JobMatchResponse {
   matches: PineconeJobRecord[];
   searchQuery: string;
+}
+
+/** NAV PAM feed vacancy detail (from feed entry url response) */
+export interface NavJobDetailJson {
+  title?: string;
+  description?: string;
+  applicationDue?: string;
+  engagementtype?: string;
+  employer?: { name?: string };
+  workLocations?: Array<{
+    city?: string;
+    county?: string;
+    municipal?: string;
+    address?: string;
+  }>;
+}
+
+export interface NavJobDetailResponse {
+  ad_content?: unknown;
+  json?: NavJobDetailJson;
 }
