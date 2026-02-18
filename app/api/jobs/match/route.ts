@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { FieldValue } from "firebase-admin/firestore";
 import { gateway } from "@ai-sdk/gateway";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import { cvSchema, type CVData } from "@/lib/schemas/cv";
+import { getAdminFirestore } from "@/lib/firebase-admin";
 import {
   getPineconeClient,
   PINECONE_JOB_INDEX,
   PINECONE_JOB_NAMESPACE,
 } from "@/lib/pinecone";
 import type { PineconeJobRecord } from "@/lib/schemas/job-feed";
+
+const USERS_COLLECTION = "users";
 
 // Map common Norwegian location strings to county values used in the index (uppercase)
 const LOCATION_TO_COUNTY: Record<string, string> = {
@@ -195,6 +199,19 @@ Regler:
           nav_feed_path: f.nav_feed_path ?? undefined,
         };
       }
+    );
+
+    const userId = token.id;
+    const db = getAdminFirestore();
+    const matchesForFirestore = JSON.parse(
+      JSON.stringify(matches)
+    ) as PineconeJobRecord[];
+    await db.collection(USERS_COLLECTION).doc(userId).set(
+      {
+        matchedJobs: matchesForFirestore,
+        matchedJobsSavedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
     );
 
     return NextResponse.json({ matches, searchQuery });

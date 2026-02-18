@@ -11,7 +11,16 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import type { CVData } from "@/lib/schemas/cv";
-import type { PineconeJobRecord } from "@/lib/schemas/job-feed";
+import {
+  pineconeJobRecordSchema,
+  type PineconeJobRecord,
+} from "@/lib/schemas/job-feed";
+import { z } from "zod";
+
+const matchedJobsResponseSchema = z.object({
+  matches: z.array(pineconeJobRecordSchema),
+  savedAt: z.string().optional(),
+});
 
 function CvDataViewSkeleton() {
   return (
@@ -71,7 +80,8 @@ export function DashboardClient() {
         throw new Error(err.error ?? "Kunne ikke hente jobbmatcher");
       }
       const data = await res.json();
-      setMatchedJobs(data.matches ?? []);
+      const matches = data.matches ?? [];
+      setMatchedJobs(matches);
       setHasSearched(true);
     } catch (e) {
       setMatchError(
@@ -99,6 +109,28 @@ export function DashboardClient() {
     }
     if (status === "authenticated") hentCv();
     else if (status !== "loading") setCvLoading(false);
+  }, [status]);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    let cancelled = false;
+    async function loadMatchedJobs() {
+      try {
+        const res = await fetch("/api/jobs/matched");
+        if (!res.ok || cancelled) return;
+        const data: unknown = await res.json();
+        const result = matchedJobsResponseSchema.safeParse(data);
+        if (!result.success || result.data.matches.length === 0) return;
+        setMatchedJobs(result.data.matches);
+        setHasSearched(true);
+      } catch {
+        // Ignore fetch/parse errors
+      }
+    }
+    loadMatchedJobs();
+    return () => {
+      cancelled = true;
+    };
   }, [status]);
 
   if (status === "loading") {

@@ -97,7 +97,7 @@ export default function JobDetailPage() {
     return (
       <div className="container mx-auto max-w-3xl px-4 py-8 sm:px-6">
         <Link
-          href="/jobs"
+          href="/dashboard"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -107,7 +107,7 @@ export default function JobDetailPage() {
           <CardContent className="py-10 text-center">
             <p className="text-destructive">{error ?? "Ukjent feil"}</p>
             <Button variant="outline" className="mt-4" asChild>
-              <Link href="/jobs">Gå til jobbliste</Link>
+              <Link href="/dashboard">Gå til dashboard</Link>
             </Button>
           </CardContent>
         </Card>
@@ -121,7 +121,7 @@ export default function JobDetailPage() {
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8 sm:px-6">
       <Link
-        href="/jobs"
+        href="/dashboard"
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
