@@ -215,11 +215,26 @@ export function JobList() {
   );
 }
 
+function getJobHref(job: JobItem): string | null {
+  const raw = job?.url;
+  if (!raw || typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  // Full URL: open externally (e.g. public stilling link if feed ever provides one)
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+  // Relative path (e.g. api/v1/vacancies/{uuid}): open via our app so we use server API key
+  const path = trimmed.startsWith("/") ? trimmed.slice(1) : trimmed;
+  return `/jobs/v?path=${encodeURIComponent(path)}`;
+}
+
 function JobCard({ job }: { job: JobItem }) {
   const entry = job._feed_entry;
+  const href = getJobHref(job);
 
-  return (
-    <li className="min-w-0 rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50 sm:p-5">
+  const content = (
+    <>
       <div className="flex min-w-0 flex-col gap-2">
         <h3 className="break-words font-semibold text-base leading-tight line-clamp-2">
           {entry.title}
@@ -243,6 +258,29 @@ function JobCard({ job }: { job: JobItem }) {
           )}
         </div>
       </div>
-    </li>
+    </>
   );
+
+  const cardClassName =
+    "min-w-0 w-full rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50 sm:p-5 block relative z-10 cursor-pointer text-left";
+
+  if (href) {
+    const isExternal = href.startsWith("http://") || href.startsWith("https://");
+    return (
+      <li className="relative list-none">
+        <a
+          href={href}
+          {...(isExternal
+            ? { target: "_blank", rel: "noopener noreferrer" }
+            : {})}
+          className={cardClassName}
+          aria-label={`Åpne stilling: ${entry.title}`}
+        >
+          {content}
+        </a>
+      </li>
+    );
+  }
+
+  return <li className={cardClassName}>{content}</li>;
 }
