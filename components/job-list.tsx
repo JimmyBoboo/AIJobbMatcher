@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import useSWR from "swr";
 import {
   Card,
@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/pagination";
 import { JobItem, PaginatedJobsResponse } from "@/lib/schemas/job-feed";
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 10;
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -61,6 +61,7 @@ function getVisiblePages(
 
 export function JobList() {
   const [currentPage, setCurrentPage] = useState(1);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const { data, error, isLoading } = useSWR<PaginatedJobsResponse>(
     `/api/jobs`,
@@ -74,11 +75,18 @@ export function JobList() {
     }
   );
 
-  const jobs = data?.items ?? [];
-  const totalPages = data?.totalPages ?? 1;
-  const totalItems = data?.totalItems ?? 0;
-  const isComplete = data?.isComplete ?? false;
+  const allJobs = data?.items ?? [];
+  const totalItems = allJobs.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+  const jobs = allJobs.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
   const visiblePages = getVisiblePages(currentPage, totalPages);
+
+  useEffect(() => {
+    listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [currentPage]);
 
   if (isLoading && !data) {
     return (
@@ -109,7 +117,7 @@ export function JobList() {
   }
 
   return (
-    <Card>
+    <Card ref={listRef}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
