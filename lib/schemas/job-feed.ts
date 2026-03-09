@@ -7,6 +7,7 @@ export const feedEntrySchema = z.object({
   businessName: z.string().optional(),
   municipal: z.string().optional(),
   sistEndret: z.string().optional(),
+  applicationDue: z.string().optional(),
 });
 
 export const jobItemSchema = z.object({
@@ -77,6 +78,9 @@ export interface NavJobDetailJson {
     municipal?: string;
     address?: string;
   }>;
+  /** Public URL to view/apply for the job (e.g. on nav.no or arbeidsplassen) */
+  url?: string;
+  sourceUrl?: string;
 }
 
 export interface NavJobDetailResponse {

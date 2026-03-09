@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { buildKeyPoints, getSummaryForPreview } from "@/lib/format-job";
+import { isApplicationOpen } from "@/lib/job-utils";
 import { JobSummaryContent } from "@/components/job-summary-content";
 import type {
   PineconeJobRecord,
@@ -117,6 +118,7 @@ export default function JobDetailPage() {
 
   const keyPoints = buildKeyPoints(job);
   const summaryText = getSummaryForPreview(job, 1200);
+  const applicationClosed = !isApplicationOpen(job.application_due);
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8 sm:px-6">
@@ -127,6 +129,12 @@ export default function JobDetailPage() {
         <ArrowLeft className="h-4 w-4" />
         Tilbake til jobbliste
       </Link>
+
+      {applicationClosed && (
+        <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+          Søknadsfristen for denne stillingen er utløpt.
+        </p>
+      )}
 
       <Card className="mt-6">
         <CardHeader>
@@ -197,23 +205,55 @@ export default function JobDetailPage() {
             </div>
           )}
 
-          {job.source_url && (
-            <div className="pt-2">
-              <Button asChild className="gap-2">
-                <a
-                  href={job.source_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Søk på stillingen
-                  <ExternalLink className="h-4 w-4" />
-                </a>
-              </Button>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Åpner annonsen på NAV i ny fane
-              </p>
-            </div>
-          )}
+          <div className="pt-2">
+            {job.source_url && !applicationClosed ? (
+              <>
+                <Button asChild className="gap-2">
+                  <a
+                    href={job.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Søk på stillingen
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </Button>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Åpner annonsen på NAV i ny fane
+                </p>
+              </>
+            ) : job.nav_feed_path ? (
+              <>
+                <Button asChild className="gap-2">
+                  <Link
+                    href={`/jobs/v?path=${encodeURIComponent(job.nav_feed_path.trim())}`}
+                  >
+                    Søk på stillingen
+                    <ExternalLink className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Åpner stillingssiden med full informasjon og søknadslenke
+                </p>
+              </>
+            ) : (
+              <>
+                <Button asChild className="gap-2">
+                  <a
+                    href={`https://arbeidsplassen.nav.no/stillinger?q=${encodeURIComponent([job.title, job.employer].filter(Boolean).join(" "))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Søk på stillingen
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </Button>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Åpner NAV Arbeidsplassen med søk etter stillingen
+                </p>
+              </>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -155,7 +155,7 @@ Regler:
     const namespace = pc.index(PINECONE_JOB_INDEX).namespace(PINECONE_JOB_NAMESPACE);
 
     const query: { topK: number; inputs: { text: string }; filter?: object } = {
-      topK: 10,
+      topK: 25,
       inputs: { text: searchQuery },
     };
 

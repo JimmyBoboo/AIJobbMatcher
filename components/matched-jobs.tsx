@@ -19,6 +19,7 @@ import {
   Trophy,
 } from "lucide-react";
 import type { PineconeJobRecord } from "@/lib/schemas/job-feed";
+import { isApplicationOpen } from "@/lib/job-utils";
 
 interface MatchedJobsProps {
   matches: PineconeJobRecord[];
@@ -258,7 +259,11 @@ export function MatchedJobs({
     );
   }
 
-  if (matches.length === 0 && hasSearched) {
+  const openMatches = matches.filter((j) =>
+    isApplicationOpen(j.application_due)
+  );
+
+  if (openMatches.length === 0 && hasSearched) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center gap-3 py-6">
@@ -273,14 +278,14 @@ export function MatchedJobs({
     );
   }
 
-  const podium = matches.slice(0, 3);
-  const rest = matches.slice(3);
+  const podium = openMatches.slice(0, 3);
+  const rest = openMatches.slice(3);
 
   return (
     <div className="flex flex-col gap-4">
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-lg font-semibold">Topp {matches.length} matcher</h2>
+        <h2 className="text-lg font-semibold">Topp {openMatches.length} matcher</h2>
         <Button
           variant="outline"
           onClick={onSearch}

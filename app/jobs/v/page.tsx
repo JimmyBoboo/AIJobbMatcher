@@ -11,8 +11,43 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import type { NavJobDetailResponse, NavJobDetailJson } from "@/lib/schemas/job-feed";
+import { isApplicationOpen } from "@/lib/job-utils";
+import { formatApplicationDue } from "@/lib/format-job";
+import { JobSummaryContent } from "@/components/job-summary-content";
+
+function buildKeyPointsFromNav(
+  json: NavJobDetailJson
+): { label: string; value: string }[] {
+  const points: { label: string; value: string }[] = [];
+  if (json.employer?.name?.trim())
+    points.push({ label: "Arbeidsgiver", value: json.employer.name.trim() });
+  if (json.engagementtype?.trim())
+    points.push({
+      label: "Ansettelsesform",
+      value: json.engagementtype.trim(),
+    });
+  const formattedDue = formatApplicationDue(json.applicationDue);
+  if (formattedDue) points.push({ label: "Søknadsfrist", value: formattedDue });
+  if (json.workLocations?.length) {
+    const locations = json.workLocations
+      .map((l) => [l.city, l.county, l.municipal].filter(Boolean).join(", "))
+      .filter(Boolean);
+    if (locations.length) {
+      points.push({ label: "Sted", value: locations.join("; ") });
+    }
+    const counties = [
+      ...new Set(
+        json.workLocations.map((l) => l.county).filter(Boolean)
+      ),
+    ].filter(Boolean) as string[];
+    if (counties.length) {
+      points.push({ label: "Fylke", value: counties.join(", ") });
+    }
+  }
+  return points;
+}
 
 /** Strips HTML and normalizes to plain text with paragraph breaks. */
 function htmlToPlainText(html: string): string {
@@ -132,13 +167,11 @@ function VacancyContent() {
     );
   }
 
+  const applicationUrl =
+    json.url ?? json.sourceUrl ?? (data as { url?: string }).url;
+  const applicationClosed = !isApplicationOpen(json.applicationDue);
   const plainDescription = htmlToPlainText(json.description ?? "");
-  const descriptionParagraphs = plainDescription
-    ? plainDescription
-        .split(/\n\n+/)
-        .map((p) => p.trim())
-        .filter(Boolean)
-    : [];
+  const keyPoints = buildKeyPointsFromNav(json);
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8 sm:px-6">
@@ -149,6 +182,12 @@ function VacancyContent() {
         <ArrowLeft className="h-4 w-4" />
         Tilbake til stillingsliste
       </Link>
+
+      {applicationClosed && (
+        <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+          Søknadsfristen for denne stillingen er utløpt.
+        </p>
+      )}
 
       <Card className="mt-6">
         <CardHeader>
@@ -162,30 +201,29 @@ function VacancyContent() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {keyPoints.length > 0 && (
+            <div className="space-y-2">
+              <h2 className="text-base font-semibold">Nøkkelpunkter</h2>
+              <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                {keyPoints.map(({ label, value }) => (
+                  <li key={label}>
+                    <span className="font-medium text-foreground">{label}:</span>{" "}
+                    {value}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="space-y-5">
+            <h2 className="text-base font-semibold">Sammendrag</h2>
+            <JobSummaryContent
+              summaryText={plainDescription || "Ingen beskrivelse tilgjengelig."}
+            />
+          </div>
+
           <div className="space-y-2 rounded-lg border bg-muted/30 p-4">
             <h2 className="text-base font-semibold">Informasjon fra NAV</h2>
-            {plainDescription ? (
-              <div className="space-y-3">
-                {descriptionParagraphs.length > 0 ? (
-                  descriptionParagraphs.map((para, i) => (
-                    <p
-                      key={i}
-                      className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap"
-                    >
-                      {para}
-                    </p>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                    {plainDescription}
-                  </p>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Ingen beskrivelse tilgjengelig.
-              </p>
-            )}
             <dl className="grid gap-1 text-sm sm:grid-cols-2">
               {json.employer?.name && (
                 <>
@@ -221,6 +259,42 @@ function VacancyContent() {
                 </>
               ) : null}
             </dl>
+          </div>
+
+          <div className="pt-2">
+            {applicationUrl && !applicationClosed ? (
+              <>
+                <Button asChild className="gap-2">
+                  <a
+                    href={applicationUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Søk på stillingen
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </Button>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Åpner annonsen på NAV i ny fane
+                </p>
+              </>
+            ) : (
+              <>
+                <Button asChild className="gap-2">
+                  <a
+                    href={`https://arbeidsplassen.nav.no/stillinger?q=${encodeURIComponent([json.title, json.employer?.name].filter(Boolean).join(" "))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Søk på stillingen
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </Button>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Åpner NAV Arbeidsplassen med søk etter stillingen
+                </p>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
