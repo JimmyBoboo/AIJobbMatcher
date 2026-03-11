@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import useSWR from "swr";
 import {
   Card,
@@ -19,10 +19,21 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { JobItem, PaginatedJobsResponse } from "@/lib/schemas/job-feed";
+import type { JobMatchFilters } from "@/lib/job-match-filters";
+import { JobFiltersBar, DEFAULT_JOB_FILTERS } from "@/components/job-filters";
 
 const ITEMS_PER_PAGE = 10;
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+function buildJobsUrl(filters: JobMatchFilters): string {
+  const params = new URLSearchParams();
+  if (filters.county?.trim()) params.set("county", filters.county.trim());
+  if (filters.engagementType?.trim())
+    params.set("engagementType", filters.engagementType.trim());
+  const qs = params.toString();
+  return qs ? `/api/jobs?${qs}` : "/api/jobs";
+}
 
 function getVisiblePages(
   currentPage: number,
@@ -61,17 +72,24 @@ function getVisiblePages(
 
 export function JobList() {
   const [currentPage, setCurrentPage] = useState(1);
+  const [filters, setFilters] = useState<JobMatchFilters>(DEFAULT_JOB_FILTERS);
   const listRef = useRef<HTMLDivElement>(null);
 
+  const jobsUrl = useMemo(() => buildJobsUrl(filters), [filters]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
+
   const { data, error, isLoading } = useSWR<PaginatedJobsResponse>(
-    `/api/jobs`,
+    jobsUrl,
     fetcher,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       dedupingInterval: 60000,
       refreshInterval: 5 * 60 * 1000,
-      keepPreviousData: true, // Keep showing old data while fetching new page
+      keepPreviousData: true,
     }
   );
 
@@ -90,34 +108,54 @@ export function JobList() {
 
   if (isLoading && !data) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Stillinger</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">Laster stillinger...</p>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-4">
+        <JobFiltersBar
+          filters={filters}
+          onFiltersChange={setFilters}
+          disabled={true}
+        />
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Stillinger</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Laster stillinger...</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Stillinger</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-destructive">
-            {error.message || "Kunne ikke laste stillinger"}
-          </p>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-4">
+        <JobFiltersBar
+          filters={filters}
+          onFiltersChange={setFilters}
+          disabled={false}
+        />
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Stillinger</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-destructive">
+              {error.message || "Kunne ikke laste stillinger"}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <Card ref={listRef}>
+    <div className="flex flex-col gap-4">
+      <JobFiltersBar
+        filters={filters}
+        onFiltersChange={setFilters}
+        disabled={false}
+      />
+      <Card ref={listRef}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -212,6 +250,7 @@ export function JobList() {
         )}
       </CardContent>
     </Card>
+    </div>
   );
 }
 

@@ -15,6 +15,7 @@ import {
   pineconeJobRecordSchema,
   type PineconeJobRecord,
 } from "@/lib/schemas/job-feed";
+import type { JobMatchFilters } from "@/lib/job-match-filters";
 import { z } from "zod";
 
 const matchedJobsResponseSchema = z.object({
@@ -66,31 +67,41 @@ export function DashboardClient() {
   const [matchError, setMatchError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const fetchJobMatches = useCallback(async (cvData: CVData) => {
-    setMatchLoading(true);
-    setMatchError(null);
-    try {
-      const res = await fetch("/api/jobs/match", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cvData }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error ?? "Kunne ikke hente jobbmatcher");
+  const fetchJobMatches = useCallback(
+    async (cvData: CVData, filters?: JobMatchFilters) => {
+      setMatchLoading(true);
+      setMatchError(null);
+      try {
+        const body: Record<string, unknown> = { cvData };
+        if (filters) {
+          if (filters.engagementType?.trim())
+            body.engagementType = filters.engagementType.trim();
+          // Send selected county, or "ANY" when "Alle fylker" so API skips county filter
+          body.county = filters.county?.trim() || "ANY";
+        }
+        const res = await fetch("/api/jobs/match", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error ?? "Kunne ikke hente jobbmatcher");
+        }
+        const data = await res.json();
+        const matches = data.matches ?? [];
+        setMatchedJobs(matches);
+        setHasSearched(true);
+      } catch (e) {
+        setMatchError(
+          e instanceof Error ? e.message : "Kunne ikke hente jobbmatcher"
+        );
+      } finally {
+        setMatchLoading(false);
       }
-      const data = await res.json();
-      const matches = data.matches ?? [];
-      setMatchedJobs(matches);
-      setHasSearched(true);
-    } catch (e) {
-      setMatchError(
-        e instanceof Error ? e.message : "Kunne ikke hente jobbmatcher"
-      );
-    } finally {
-      setMatchLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
     async function hentCv() {
@@ -173,7 +184,7 @@ export function DashboardClient() {
             isLoading={matchLoading}
             error={matchError}
             hasSearched={hasSearched}
-            onSearch={() => fetchJobMatches(parsedCV)}
+            onSearch={(filters) => fetchJobMatches(parsedCV, filters)}
           />
         </>
       )}
