@@ -17,6 +17,7 @@ function mapRecordToJob(id: string, record: Record<string, unknown>): PineconeJo
     county: str(meta.county),
     occupation: str(meta.occupation),
     engagement_type: str(meta.engagement_type),
+    extent: meta.extent != null ? str(meta.extent) : undefined,
     published: str(meta.published),
     application_due: str(meta.application_due),
     source_url: str(meta.source_url),

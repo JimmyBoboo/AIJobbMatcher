@@ -12,6 +12,10 @@ import {
   PINECONE_JOB_NAMESPACE,
 } from "@/lib/pinecone";
 import type { PineconeJobRecord } from "@/lib/schemas/job-feed";
+import {
+  ENGAGEMENT_TYPE_INDEX_VALUES,
+  EXTENT_INDEX_VALUES,
+} from "@/lib/job-match-filters";
 
 const USERS_COLLECTION = "users";
 
@@ -123,7 +127,18 @@ export async function POST(request: NextRequest) {
 
     const cvData = parsed.data;
     const cvSummary = buildCvSummary(cvData);
-    const county = resolveCounty(cvData.personalInfo.location);
+
+    // Optional filter params from request body
+    const engagementType = typeof body?.engagementType === "string" ? body.engagementType.trim() || undefined : undefined;
+    const countyOverride = body?.county != null && body?.county !== "" ? String(body.county).trim() : undefined;
+
+    // County: use override if provided and not "ANY"; otherwise use CV-derived
+    let county: string | null = null;
+    if (countyOverride && countyOverride.toUpperCase() !== "ANY") {
+      county = countyOverride;
+    } else if (!countyOverride) {
+      county = resolveCounty(cvData.personalInfo.location);
+    }
 
     // Step 1: Generate search query from CV using Claude
     const { output } = await generateText({
@@ -154,13 +169,44 @@ Regler:
     const pc = getPineconeClient();
     const namespace = pc.index(PINECONE_JOB_INDEX).namespace(PINECONE_JOB_NAMESPACE);
 
+    const filterConditions: object[] = [];
+    if (county) {
+      filterConditions.push({ county: { $eq: county } });
+    }
+    if (engagementType) {
+      if (engagementType === "Heltid" || engagementType === "Deltid") {
+        const extentValues =
+          EXTENT_INDEX_VALUES[engagementType as "Heltid" | "Deltid"];
+        const engagementValues =
+          ENGAGEMENT_TYPE_INDEX_VALUES[engagementType];
+        const orParts: object[] = [];
+        if (extentValues?.length > 0) {
+          orParts.push({ extent: { $in: extentValues } });
+        }
+        if (engagementValues?.length > 0) {
+          orParts.push({ engagement_type: { $in: engagementValues } });
+        }
+        if (orParts.length > 0) {
+          filterConditions.push(
+            orParts.length === 1 ? orParts[0]! : { $or: orParts }
+          );
+        }
+      } else {
+        const indexValues = ENGAGEMENT_TYPE_INDEX_VALUES[engagementType];
+        if (indexValues && indexValues.length > 0) {
+          filterConditions.push({ engagement_type: { $in: indexValues } });
+        } else {
+          filterConditions.push({ engagement_type: { $eq: engagementType } });
+        }
+      }
+    }
+
     const query: { topK: number; inputs: { text: string }; filter?: object } = {
-      topK: 25,
+      topK: 50,
       inputs: { text: searchQuery },
     };
-
-    if (county) {
-      query.filter = { county: { $eq: county } };
+    if (filterConditions.length > 0) {
+      query.filter = filterConditions.length === 1 ? filterConditions[0] : { $and: filterConditions };
     }
 
     const response = await namespace.searchRecords({
@@ -172,6 +218,7 @@ Regler:
         "county",
         "occupation",
         "engagement_type",
+        "extent",
         "published",
         "application_due",
         "source_url",
@@ -192,6 +239,7 @@ Regler:
           county: f.county ?? "",
           occupation: f.occupation ?? "",
           engagement_type: f.engagement_type ?? "",
+          extent: f.extent ?? undefined,
           published: f.published ?? "",
           application_due: f.application_due ?? "",
           source_url: f.source_url ?? "",

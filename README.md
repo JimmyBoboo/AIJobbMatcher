@@ -29,6 +29,10 @@ cp .env.example .env.local
 | `PINECONE_API_KEY` | API key for your Pinecone vector database. | Yes |
 | `NEXT_PUBLIC_APP_URL` | Public URL of the app. Defaults to `http://localhost:3000`. | No |
 
+### Pinecone index and Heltid/Deltid filters
+
+The app filters matched jobs by engagement type (e.g. Vikariat) and by extent (Heltid/Deltid). For **Heltid** and **Deltid** filters to return results, the Pinecone job index must include an **extent** metadata field with values from NAV PAM (e.g. "Heltid", "Deltid", or percentage). The pipeline that ingests jobs into Pinecone should map NAV’s vacancy `extent` (and `engagementtype`) into the index metadata when indexing.
+
 ### Run the Development Server
 
 ```bash

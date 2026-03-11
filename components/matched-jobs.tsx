@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -10,7 +11,17 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
   Calendar,
+  ChevronLeft,
+  ChevronRight,
   ExternalLink,
   MapPin,
   Briefcase,
@@ -20,15 +31,21 @@ import {
 } from "lucide-react";
 import type { PineconeJobRecord } from "@/lib/schemas/job-feed";
 import { isApplicationOpen } from "@/lib/job-utils";
+import type { JobMatchFilters } from "@/lib/job-match-filters";
+import {
+  JobFiltersBar,
+  DEFAULT_JOB_FILTERS,
+} from "@/components/job-filters";
 
 interface MatchedJobsProps {
   matches: PineconeJobRecord[];
   isLoading: boolean;
   error: string | null;
   hasSearched: boolean;
-  onSearch: () => void;
+  onSearch: (filters?: JobMatchFilters) => void;
 }
 
+const MATCHES_PER_PAGE = 10;
 const RECENT_DAYS = 7;
 const absoluteDateOptions: Intl.DateTimeFormatOptions = {
   day: "numeric",
@@ -112,12 +129,20 @@ function PodiumCard({
             {job.location}
           </span>
         )}
-        {job.engagement_type && (
-          <span className="inline-flex items-center gap-0.5">
-            <Briefcase className="h-3 w-3" />
-            {job.engagement_type}
-          </span>
-        )}
+        {(() => {
+          const engagement = job.engagement_type?.trim() || "";
+          const extent =
+            job.extent != null && String(job.extent).trim() && String(job.extent).toLowerCase() !== "null"
+              ? String(job.extent).trim()
+              : "";
+          const parts = [engagement, extent].filter(Boolean);
+          return parts.length > 0 ? (
+            <span className="inline-flex items-center gap-0.5">
+              <Briefcase className="h-3 w-3" />
+              {parts.join(", ")}
+            </span>
+          ) : null;
+        })()}
         {formattedPublished && (
           <span className="inline-flex items-center gap-0.5">
             <Calendar className="h-3 w-3" />
@@ -195,32 +220,67 @@ export function MatchedJobs({
   hasSearched,
   onSearch,
 }: MatchedJobsProps) {
+  const [filters, setFilters] = useState<JobMatchFilters>(DEFAULT_JOB_FILTERS);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const openMatches = matches.filter((j) =>
+    isApplicationOpen(j.application_due)
+  );
+  const rest = openMatches.slice(3);
+  const totalRestPages = Math.max(1, Math.ceil(rest.length / MATCHES_PER_PAGE));
+  const restPage = rest.slice(
+    (currentPage - 1) * MATCHES_PER_PAGE,
+    currentPage * MATCHES_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [openMatches.length]);
+
+  useEffect(() => {
+    if (currentPage > totalRestPages) setCurrentPage(1);
+  }, [currentPage, totalRestPages]);
+
+  const handleSearch = () => onSearch(filters);
+
   // Initial state: no search has been triggered yet
   if (!isLoading && !error && !hasSearched) {
     return (
-      <Card>
-        <CardContent className="flex flex-col items-center gap-4 py-10">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Search className="h-6 w-6 text-primary" />
-          </div>
-          <div className="text-center">
-            <p className="font-medium">Finn jobber som matcher din profil</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Vi analyserer CV-en din og finner de beste stillingene for deg
-            </p>
-          </div>
-          <Button onClick={onSearch} size="lg" className="mt-1 gap-2">
-            <Search className="h-4 w-4" />
-            Finn relevante jobber
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-4">
+        <JobFiltersBar
+          filters={filters}
+          onFiltersChange={setFilters}
+          disabled={false}
+        />
+        <Card>
+          <CardContent className="flex flex-col items-center gap-4 py-10">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <Search className="h-6 w-6 text-primary" />
+            </div>
+            <div className="text-center">
+              <p className="font-medium">Finn jobber som matcher din profil</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Vi analyserer CV-en din og finner de beste stillingene for deg
+              </p>
+            </div>
+            <Button onClick={handleSearch} size="lg" className="mt-1 gap-2">
+              <Search className="h-4 w-4" />
+              Finn relevante jobber
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4">
+        <JobFiltersBar
+          filters={filters}
+          onFiltersChange={setFilters}
+          disabled={true}
+        />
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <Skeleton className="h-6 w-40" />
           <Skeleton className="h-9 w-28 rounded-md" />
@@ -248,47 +308,61 @@ export function MatchedJobs({
 
   if (error) {
     return (
-      <Card>
-        <CardContent className="flex flex-col items-center gap-3 py-6">
-          <p className="text-sm text-destructive">{error}</p>
-          <Button variant="outline" onClick={onSearch} size="sm">
-            Prøv igjen
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-4">
+        <JobFiltersBar
+          filters={filters}
+          onFiltersChange={setFilters}
+          disabled={false}
+        />
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 py-6">
+            <p className="text-sm text-destructive">{error}</p>
+            <Button variant="outline" onClick={handleSearch} size="sm">
+              Prøv igjen
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
-  const openMatches = matches.filter((j) =>
-    isApplicationOpen(j.application_due)
-  );
-
   if (openMatches.length === 0 && hasSearched) {
     return (
-      <Card>
-        <CardContent className="flex flex-col items-center gap-3 py-6">
-          <p className="text-sm text-muted-foreground">
-            Ingen treff funnet. Prøv å oppdater CV-en din med mer informasjon.
-          </p>
-          <Button variant="outline" onClick={onSearch} size="sm">
-            Søk igjen
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-4">
+        <JobFiltersBar
+          filters={filters}
+          onFiltersChange={setFilters}
+          disabled={false}
+        />
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 py-6">
+            <p className="text-sm text-muted-foreground">
+              Ingen treff funnet. Prøv å oppdater CV-en din med mer informasjon.
+            </p>
+            <Button variant="outline" onClick={handleSearch} size="sm">
+              Søk igjen
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   const podium = openMatches.slice(0, 3);
-  const rest = openMatches.slice(3);
 
   return (
     <div className="flex flex-col gap-4">
+      <JobFiltersBar
+        filters={filters}
+        onFiltersChange={setFilters}
+        disabled={false}
+      />
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-semibold">Topp {openMatches.length} matcher</h2>
         <Button
           variant="outline"
-          onClick={onSearch}
+          onClick={handleSearch}
           size="sm"
           className="w-fit gap-1.5"
         >
@@ -304,18 +378,68 @@ export function MatchedJobs({
         ))}
       </div>
 
-      {/* Rest of the list */}
+      {/* Rest of the list — paginated */}
       {rest.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Flere matcher
+              Flere matcher ({rest.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
-            {rest.map((job, i) => (
-              <ListRow key={job._id} job={job} rank={i + 4} />
+            {restPage.map((job, i) => (
+              <ListRow
+                key={job._id}
+                job={job}
+                rank={(currentPage - 1) * MATCHES_PER_PAGE + i + 4}
+              />
             ))}
+            {totalRestPages > 1 && (
+              <Pagination className="mt-4">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage > 1) setCurrentPage((p) => p - 1);
+                      }}
+                      className={
+                        currentPage <= 1 ? "pointer-events-none opacity-50" : ""
+                      }
+                      aria-label="Forrige side"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span className="hidden sm:inline">Forrige</span>
+                    </PaginationPrevious>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <span className="px-2 text-sm text-muted-foreground">
+                      Side {currentPage} av {totalRestPages}
+                    </span>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage < totalRestPages)
+                          setCurrentPage((p) => p + 1);
+                      }}
+                      className={
+                        currentPage >= totalRestPages
+                          ? "pointer-events-none opacity-50"
+                          : ""
+                      }
+                      aria-label="Neste side"
+                    >
+                      <span className="hidden sm:inline">Neste</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </PaginationNext>
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
           </CardContent>
         </Card>
       )}

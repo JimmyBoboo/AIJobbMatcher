@@ -8,6 +8,8 @@ export const feedEntrySchema = z.object({
   municipal: z.string().optional(),
   sistEndret: z.string().optional(),
   applicationDue: z.string().optional(),
+  /** Industry/occupation (e.g. from Pinecone); used for filtering. */
+  occupation: z.string().optional(),
 });
 
 export const jobItemSchema = z.object({
@@ -50,6 +52,8 @@ export const pineconeJobRecordSchema = z.object({
   county: z.string(),
   occupation: z.string(),
   engagement_type: z.string(),
+  /** Omfang (Heltid/Deltid) from NAV PAM extent; used to filter full-time vs part-time. */
+  extent: z.string().optional(),
   published: z.string(),
   application_due: z.string(),
   source_url: z.string(),
@@ -71,6 +75,8 @@ export interface NavJobDetailJson {
   description?: string;
   applicationDue?: string;
   engagementtype?: string;
+  /** Omfang (Heltid/Deltid); should be stored as metadata when indexing to Pinecone. */
+  extent?: string;
   employer?: { name?: string };
   workLocations?: Array<{
     city?: string;

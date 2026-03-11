@@ -55,6 +55,9 @@ export function buildKeyPoints(
       label: "Ansettelsesform",
       value: job.engagement_type.trim(),
     });
+  const extentVal = job.extent != null ? String(job.extent).trim() : "";
+  if (extentVal && extentVal.toLowerCase() !== "null")
+    points.push({ label: "Omfang", value: extentVal });
   if (formattedDue)
     points.push({ label: "Søknadsfrist", value: formattedDue });
   if (formattedPublished)
