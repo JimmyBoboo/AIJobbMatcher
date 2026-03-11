@@ -8,6 +8,8 @@ export const feedEntrySchema = z.object({
   municipal: z.string().optional(),
   sistEndret: z.string().optional(),
   applicationDue: z.string().optional(),
+  /** Industry/occupation (e.g. from Pinecone); used for filtering. */
+  occupation: z.string().optional(),
 });
 
 export const jobItemSchema = z.object({

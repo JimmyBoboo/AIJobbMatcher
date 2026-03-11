@@ -1,5 +1,6 @@
 "use client";
 
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -14,6 +15,7 @@ import { ENGAGEMENT_TYPE_OPTIONS, COUNTIES } from "@/lib/job-match-filters";
 export const DEFAULT_JOB_FILTERS: JobMatchFilters = {
   engagementType: "",
   county: "",
+  industry: "",
 };
 
 export function JobFiltersBar({
@@ -75,6 +77,19 @@ export function JobFiltersBar({
             ))}
           </SelectContent>
         </Select>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label className="text-xs">Bransje / yrke</Label>
+        <Input
+          type="search"
+          placeholder="F.eks. IT, helse, salg"
+          value={filters.industry ?? ""}
+          onChange={(e) =>
+            onFiltersChange({ ...filters, industry: e.target.value })
+          }
+          disabled={disabled}
+          className="w-[180px]"
+        />
       </div>
     </div>
   );

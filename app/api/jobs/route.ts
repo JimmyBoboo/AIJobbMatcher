@@ -87,6 +87,7 @@ function pineconeRecordToJobItem(record: {
   employer?: string;
   location?: string;
   county?: string;
+  occupation?: string;
   published?: string;
   application_due?: string;
   nav_feed_path?: string;
@@ -104,6 +105,7 @@ function pineconeRecordToJobItem(record: {
       municipal: record.location || record.county || "",
       sistEndret: record.published ?? "",
       applicationDue: record.application_due ?? "",
+      occupation: record.occupation ?? undefined,
     },
   };
 }
@@ -160,6 +162,7 @@ export async function GET(request: NextRequest) {
           employer: f.employer,
           location: f.location,
           county: f.county,
+          occupation: f.occupation,
           published: f.published,
           application_due: f.application_due,
           nav_feed_path: f.nav_feed_path,

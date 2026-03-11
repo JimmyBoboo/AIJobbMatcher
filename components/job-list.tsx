@@ -93,7 +93,16 @@ export function JobList() {
     }
   );
 
-  const allJobs = data?.items ?? [];
+  const rawJobs = data?.items ?? [];
+  const industryTrim = filters.industry?.trim().toLowerCase() ?? "";
+  const allJobs = useMemo(() => {
+    if (!industryTrim) return rawJobs;
+    return rawJobs.filter((job) => {
+      const title = (job._feed_entry?.title ?? job.title ?? "").toLowerCase();
+      const occupation = (job._feed_entry?.occupation ?? "").toLowerCase();
+      return title.includes(industryTrim) || occupation.includes(industryTrim);
+    });
+  }, [rawJobs, industryTrim]);
   const totalItems = allJobs.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
   const jobs = allJobs.slice(
@@ -168,7 +177,9 @@ export function JobList() {
               )}
             </CardTitle>
             <CardDescription className="mt-1.5">
-              Lastet inn: {totalItems}
+              {totalItems === rawJobs.length && !industryTrim
+                ? `Lastet inn: ${totalItems}`
+                : `Viser ${totalItems} stillinger`}
             </CardDescription>
           </div>
         </div>

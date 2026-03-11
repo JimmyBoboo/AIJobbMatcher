@@ -6,6 +6,8 @@
 export interface JobMatchFilters {
   engagementType: string;
   county: string;
+  /** Industry/occupation filter (substring match on occupation or title). */
+  industry: string;
 }
 
 /** Sentinel: no county filter (use CV-derived or show all). */
