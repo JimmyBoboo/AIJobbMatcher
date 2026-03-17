@@ -14,7 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { CVData } from "@/lib/schemas/cv";
 
 export function CvBuilderClient() {
@@ -31,11 +31,24 @@ export function CvBuilderClient() {
   });
 
   const initialAskSent = useRef(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (initialAskSent.current || messages.length > 0 || status !== "ready") return;
     initialAskSent.current = true;
-    sendMessage({ text: "Hei, jeg vil gjerne lage en CV." });
+    sendMessage({ text: "Start" });
   }, [messages.length, status, sendMessage]);
+
+  useEffect(() => {
+    if (!scrollContainerRef.current) return;
+    const el = scrollContainerRef.current;
+    const scroll = () => {
+      el.scrollTop = el.scrollHeight;
+    };
+    scroll();
+    const raf = requestAnimationFrame(scroll);
+    return () => cancelAnimationFrame(raf);
+  }, [messages, status]);
 
   const assistantCount = messages.filter((m) => m.role === "assistant").length;
   const canFinish = assistantCount >= 2;
@@ -160,13 +173,27 @@ export function CvBuilderClient() {
             </p>
           )}
 
-          <div className="flex max-h-[400px] flex-col gap-3 overflow-y-auto rounded-lg border bg-muted/30 p-3">
+          <div
+            ref={scrollContainerRef}
+            className="flex max-h-[400px] flex-col gap-3 overflow-y-auto rounded-lg border bg-muted/30 p-3"
+          >
             {messages.length === 0 && (
               <p className="py-4 text-center text-sm text-muted-foreground">
                 AI stiller første spørsmål nå…
               </p>
             )}
-            {messages.map((message) => (
+            {messages
+              .filter((message, index) => {
+                if (index === 0 && message.role === "user") {
+                  const text = message.parts
+                    .map((p) => (p.type === "text" ? p.text : ""))
+                    .join("")
+                    .trim();
+                  if (text === "Start") return false;
+                }
+                return true;
+              })
+              .map((message) => (
               <div
                 key={message.id}
                 className={`flex gap-2 ${
@@ -199,15 +226,27 @@ export function CvBuilderClient() {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="flex gap-2">
-            <Input
+          <form onSubmit={handleSubmit} className="flex gap-2 items-end">
+            <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  const trimmed = input.trim();
+                  if (trimmed && !isBusy) {
+                    sendMessage({ text: trimmed });
+                    setInput("");
+                    setFinishError(null);
+                  }
+                }
+              }}
               placeholder="Skriv svaret ditt her..."
               disabled={isBusy}
-              className="flex-1"
+              rows={2}
+              className="min-h-[2.5rem] max-h-32 flex-1 py-2"
             />
-            <Button type="submit" disabled={isBusy} size="icon">
+            <Button type="submit" disabled={isBusy} size="icon" className="shrink-0 h-9 w-9">
               {(status === "submitted" || status === "streaming") && !isFinishing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
