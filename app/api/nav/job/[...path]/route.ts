@@ -8,14 +8,14 @@ const BASE_URL = "https://pam-stilling-feed.nav.no";
  */
 export async function GET(
   _request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
+  context: { params: Promise<{ path: string[] }> },
 ) {
   try {
     const { path: pathSegments } = await context.params;
     if (!pathSegments?.length || pathSegments.some((s) => !s?.trim())) {
       return NextResponse.json(
         { error: "Mangler sti til stilling" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -23,7 +23,7 @@ export async function GET(
     if (!relativePath.startsWith("api/v1/")) {
       return NextResponse.json(
         { error: "Ugyldig sti for NAV stilling" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -31,7 +31,7 @@ export async function GET(
     if (!apiKey) {
       return NextResponse.json(
         { error: "NAV API-nøkkel er ikke konfigurert" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -46,7 +46,7 @@ export async function GET(
     if (!response.ok) {
       return NextResponse.json(
         { error: `NAV API feil: ${response.status}` },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
@@ -57,7 +57,7 @@ export async function GET(
     console.error("NAV job fetch error:", message);
     return NextResponse.json(
       { error: "Kunne ikke hente stilling fra NAV.", details: message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

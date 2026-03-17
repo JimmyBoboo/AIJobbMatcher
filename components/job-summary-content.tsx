@@ -38,22 +38,32 @@ export function JobSummaryContent({
           .map((p) => p.trim())
           .filter(Boolean);
         return (
-          <div
+          <section
             key={index}
-            className="space-y-3 border-t border-border pt-6 [&:first-child]:border-t-0 [&:first-child]:pt-0"
+            className="space-y-3 border-t border-border pt-6 mt-6 first:border-t-0 first:pt-0 first:mt-0"
           >
-            <h4 className="text-sm font-semibold text-foreground">
+            <h3 className="text-base font-semibold text-foreground">
               {part.title}
-            </h4>
+            </h3>
             <div className="space-y-4">
               {sectionParagraphs.map((para, i) => {
-                const lines = para.split(/\n/).map((l) => l.trim()).filter(Boolean);
+                const lines = para
+                  .split(/\n/)
+                  .map((l) => l.trim())
+                  .filter(Boolean);
                 const bulletLines = lines.filter((l) => /^[–\-*]\s/.test(l));
-                const useList = bulletLines.length >= 2 || (lines.length >= 2 && bulletLines.length >= 1);
+                const useList =
+                  bulletLines.length >= 2 ||
+                  (lines.length >= 2 && bulletLines.length >= 1);
                 if (useList && bulletLines.length > 0) {
-                  const items = lines.map((l) => l.replace(/^[–\-*]\s*/, "").trim()).filter(Boolean);
+                  const items = lines
+                    .map((l) => l.replace(/^[–\-*]\s*/, "").trim())
+                    .filter(Boolean);
                   return (
-                    <ul key={i} className="list-disc space-y-1.5 pl-5 text-sm text-muted-foreground leading-relaxed">
+                    <ul
+                      key={i}
+                      className="list-disc space-y-1.5 pl-5 text-sm text-muted-foreground leading-relaxed"
+                    >
                       {items.map((item, j) => (
                         <li key={j}>{item}</li>
                       ))}
@@ -67,7 +77,7 @@ export function JobSummaryContent({
                 );
               })}
             </div>
-          </div>
+          </section>
         );
       })}
     </div>

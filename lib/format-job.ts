@@ -1,4 +1,7 @@
-import type { PineconeJobRecord } from "@/lib/schemas/job-feed";
+import type {
+  NavJobDetailJson,
+  PineconeJobRecord,
+} from "@/lib/schemas/job-feed";
 
 const absoluteDateOptions: Intl.DateTimeFormatOptions = {
   day: "numeric",
@@ -13,7 +16,7 @@ export function parseDate(value: string | undefined | null): Date | null {
 }
 
 export function formatApplicationDue(
-  value: string | undefined | null
+  value: string | undefined | null,
 ): string | null {
   const date = parseDate(value);
   if (date) return date.toLocaleDateString("nb-NO", absoluteDateOptions);
@@ -23,7 +26,7 @@ export function formatApplicationDue(
 const RECENT_DAYS = 7;
 
 export function formatPublished(
-  value: string | undefined | null
+  value: string | undefined | null,
 ): string | null {
   const date = parseDate(value);
   if (!date) return value && String(value).trim() ? value : null;
@@ -39,7 +42,7 @@ export function formatPublished(
 }
 
 export function buildKeyPoints(
-  job: PineconeJobRecord
+  job: PineconeJobRecord,
 ): { label: string; value: string }[] {
   const formattedDue = formatApplicationDue(job.application_due);
   const formattedPublished = formatPublished(job.published);
@@ -58,11 +61,61 @@ export function buildKeyPoints(
   const extentVal = job.extent != null ? String(job.extent).trim() : "";
   if (extentVal && extentVal.toLowerCase() !== "null")
     points.push({ label: "Omfang", value: extentVal });
-  if (formattedDue)
-    points.push({ label: "Søknadsfrist", value: formattedDue });
+  if (formattedDue) points.push({ label: "Søknadsfrist", value: formattedDue });
   if (formattedPublished)
     points.push({ label: "Publisert", value: formattedPublished });
   return points;
+}
+
+/** Nøkkelpunkter from NAV PAM job detail (employer, ansettelsesform, søknadsfrist, sted, fylke). */
+export function buildKeyPointsFromNav(
+  json: NavJobDetailJson,
+): { label: string; value: string }[] {
+  const points: { label: string; value: string }[] = [];
+  if (json.employer?.name?.trim())
+    points.push({ label: "Arbeidsgiver", value: json.employer.name.trim() });
+  if (json.engagementtype?.trim())
+    points.push({
+      label: "Ansettelsesform",
+      value: json.engagementtype.trim(),
+    });
+  const formattedDue = formatApplicationDue(json.applicationDue);
+  if (formattedDue) points.push({ label: "Søknadsfrist", value: formattedDue });
+  if (json.workLocations?.length) {
+    const locations = json.workLocations
+      .map((l) => [l.city, l.county, l.municipal].filter(Boolean).join(", "))
+      .filter(Boolean);
+    if (locations.length) {
+      points.push({ label: "Sted", value: locations.join("; ") });
+    }
+    const counties = [
+      ...new Set(json.workLocations.map((l) => l.county).filter(Boolean)),
+    ].filter(Boolean) as string[];
+    if (counties.length) {
+      points.push({ label: "Fylke", value: counties.join(", ") });
+    }
+  }
+  return points;
+}
+
+/** Strips HTML and normalizes to plain text with paragraph breaks (for NAV description). */
+export function htmlToPlainText(html: string): string {
+  if (!html?.trim()) return "";
+  let text = html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>\s*<p>/gi, "\n\n")
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<\/h[1-6]>\s*/gi, "\n\n")
+    .replace(/<p[^>]*>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
+  return text.replace(/\n{3,}/g, "\n\n");
 }
 
 export function buildGeneratedSummary(job: PineconeJobRecord): string {
@@ -86,9 +139,7 @@ export function buildGeneratedSummary(job: PineconeJobRecord): string {
 export function getJobSummaryText(job: PineconeJobRecord): string {
   const hasContent = job.content != null && job.content.trim() !== "";
   if (hasContent) return job.content!.trim();
-  return (
-    buildGeneratedSummary(job) || "Se hele annonsen for mer informasjon."
-  );
+  return buildGeneratedSummary(job) || "Se hele annonsen for mer informasjon.";
 }
 
 const SHORT_SUMMARY_MAX_LENGTH = 180;
@@ -111,7 +162,7 @@ export function getShortSummary(job: PineconeJobRecord): string {
 /** Truncate summary at word boundary for preview (e.g. popup). */
 export function getSummaryForPreview(
   job: PineconeJobRecord,
-  maxChars: number
+  maxChars: number,
 ): string {
   const full = getJobSummaryText(job);
   if (full.length <= maxChars) return full;
@@ -143,18 +194,41 @@ const SECTION_LABELS = [
   "krav til deg",
   "hva du vil jobbe med",
   "hvem vi ser etter",
+  "qualifications and experience",
+  "personal qualities",
+  "about the job",
+  "about the role",
+  "requirements",
+  "we offer",
+  "what we offer",
+  "the ideal candidate",
+  "who we are looking for",
+  "duties",
+  "responsibilities",
+  "about us",
 ];
 
-function looksLikeSectionHeading(line: string): boolean {
+function getSectionHeadingLength(line: string): number {
   const trimmed = line.trim();
-  if (trimmed.length === 0 || trimmed.length > SECTION_HEADING_MAX_LENGTH)
-    return false;
-  if (trimmed.endsWith(":")) return true;
   const lower = trimmed.toLowerCase();
-  if (SECTION_LABELS.some((label) => lower === label || lower.startsWith(`${label}:`)))
-    return true;
-  if (lower.startsWith("om ") && trimmed.length < 60) return true;
-  return false;
+  if (trimmed.endsWith(":")) return trimmed.length;
+  const match = SECTION_LABELS.find(
+    (label) =>
+      lower === label ||
+      lower.startsWith(`${label}:`) ||
+      lower.startsWith(label),
+  );
+  if (match) return match.length;
+  if (lower.startsWith("om ") && trimmed.length < 60) {
+    const afterOm = trimmed.slice(3).trim();
+    const spaceIdx = afterOm.indexOf(" ");
+    return spaceIdx > 0 ? 3 + spaceIdx : trimmed.length;
+  }
+  return 0;
+}
+
+function looksLikeSectionHeading(line: string): boolean {
+  return getSectionHeadingLength(line) > 0;
 }
 
 export type SummaryPart =
@@ -163,7 +237,10 @@ export type SummaryPart =
 
 function flushPart(
   parts: SummaryPart[],
-  current: { type: "paragraph"; content: string } | { type: "section"; title: string; content: string } | null
+  current:
+    | { type: "paragraph"; content: string }
+    | { type: "section"; title: string; content: string }
+    | null,
 ): void {
   if (!current) return;
   if (current.type === "paragraph") {
@@ -179,7 +256,10 @@ export function parseSummaryIntoParts(text: string): SummaryPart[] {
 
   const lines = trimmed.split(/\n/).map((l) => l.trim());
   const parts: SummaryPart[] = [];
-  let current: { type: "paragraph"; content: string } | { type: "section"; title: string; content: string } | null = null;
+  let current:
+    | { type: "paragraph"; content: string }
+    | { type: "section"; title: string; content: string }
+    | null = null;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -187,31 +267,60 @@ export function parseSummaryIntoParts(text: string): SummaryPart[] {
 
     if (isEmpty) {
       if (current?.type === "paragraph") {
-        current = { type: "paragraph" as const, content: current.content + "\n\n" };
+        current = {
+          type: "paragraph" as const,
+          content: current.content + "\n\n",
+        };
       } else if (current?.type === "section") {
-        current = { type: "section" as const, title: current.title, content: current.content + "\n\n" };
+        current = {
+          type: "section" as const,
+          title: current.title,
+          content: current.content + "\n\n",
+        };
       }
       continue;
     }
 
     if (looksLikeSectionHeading(line)) {
       flushPart(parts, current);
-      const title = line.replace(/:$/, "").trim();
+      const headingLen = getSectionHeadingLength(line);
+      const title = (
+        headingLen > 0 && line.length > headingLen
+          ? line.slice(0, headingLen)
+          : line
+      )
+        .replace(/:$/, "")
+        .trim();
       const rest: string[] = [];
+      const afterHeading =
+        headingLen > 0 && line.length > headingLen
+          ? line.slice(headingLen).trim()
+          : "";
+      if (afterHeading) rest.push(afterHeading);
       i++;
-      while (i < lines.length && (lines[i]?.trim() === "" || !looksLikeSectionHeading(lines[i] ?? ""))) {
+      while (
+        i < lines.length &&
+        (lines[i]?.trim() === "" || !looksLikeSectionHeading(lines[i] ?? ""))
+      ) {
         if (lines[i]?.trim() !== "") rest.push(lines[i] ?? "");
         i++;
       }
       i--;
       const content = rest.join("\n").trim();
-      if (content) parts.push({ type: "section", title, content });
+      if (content || title) parts.push({ type: "section", title, content });
       current = null;
     } else {
       if (current?.type === "paragraph") {
-        current = { type: "paragraph", content: current.content + (current.content ? "\n" : "") + line };
+        current = {
+          type: "paragraph",
+          content: current.content + (current.content ? "\n" : "") + line,
+        };
       } else if (current?.type === "section") {
-        current = { type: "section", title: current.title, content: current.content + (current.content ? "\n" : "") + line };
+        current = {
+          type: "section",
+          title: current.title,
+          content: current.content + (current.content ? "\n" : "") + line,
+        };
       } else {
         current = { type: "paragraph", content: line };
       }

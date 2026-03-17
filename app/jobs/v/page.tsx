@@ -14,59 +14,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import type { NavJobDetailResponse, NavJobDetailJson } from "@/lib/schemas/job-feed";
 import { isApplicationOpen } from "@/lib/job-utils";
-import { formatApplicationDue } from "@/lib/format-job";
+import {
+  buildKeyPointsFromNav,
+  formatApplicationDue,
+  htmlToPlainText,
+} from "@/lib/format-job";
 import { JobSummaryContent } from "@/components/job-summary-content";
-
-function buildKeyPointsFromNav(
-  json: NavJobDetailJson
-): { label: string; value: string }[] {
-  const points: { label: string; value: string }[] = [];
-  if (json.employer?.name?.trim())
-    points.push({ label: "Arbeidsgiver", value: json.employer.name.trim() });
-  if (json.engagementtype?.trim())
-    points.push({
-      label: "Ansettelsesform",
-      value: json.engagementtype.trim(),
-    });
-  const formattedDue = formatApplicationDue(json.applicationDue);
-  if (formattedDue) points.push({ label: "Søknadsfrist", value: formattedDue });
-  if (json.workLocations?.length) {
-    const locations = json.workLocations
-      .map((l) => [l.city, l.county, l.municipal].filter(Boolean).join(", "))
-      .filter(Boolean);
-    if (locations.length) {
-      points.push({ label: "Sted", value: locations.join("; ") });
-    }
-    const counties = [
-      ...new Set(
-        json.workLocations.map((l) => l.county).filter(Boolean)
-      ),
-    ].filter(Boolean) as string[];
-    if (counties.length) {
-      points.push({ label: "Fylke", value: counties.join(", ") });
-    }
-  }
-  return points;
-}
-
-/** Strips HTML and normalizes to plain text with paragraph breaks. */
-function htmlToPlainText(html: string): string {
-  if (!html?.trim()) return "";
-  let text = html
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>\s*<p>/gi, "\n\n")
-    .replace(/<\/p>/gi, "\n")
-    .replace(/<p[^>]*>/gi, "")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .trim();
-  return text.replace(/\n{3,}/g, "\n\n");
-}
 
 function VacancyContent() {
   const searchParams = useSearchParams();
@@ -235,7 +188,8 @@ function VacancyContent() {
                 <>
                   <dt className="font-medium text-foreground">Søknadsfrist</dt>
                   <dd className="text-muted-foreground">
-                    {new Date(json.applicationDue).toLocaleDateString("nb-NO")}
+                    {formatApplicationDue(json.applicationDue) ??
+                      json.applicationDue}
                   </dd>
                 </>
               )}

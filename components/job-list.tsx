@@ -37,7 +37,7 @@ function buildJobsUrl(filters: JobMatchFilters): string {
 
 function getVisiblePages(
   currentPage: number,
-  totalPages: number
+  totalPages: number,
 ): (number | "ellipsis")[] {
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -90,7 +90,7 @@ export function JobList() {
       dedupingInterval: 60000,
       refreshInterval: 5 * 60 * 1000,
       keepPreviousData: true,
-    }
+    },
   );
 
   const rawJobs = data?.items ?? [];
@@ -107,7 +107,7 @@ export function JobList() {
   const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
   const jobs = allJobs.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    currentPage * ITEMS_PER_PAGE,
   );
   const visiblePages = getVisiblePages(currentPage, totalPages);
 
@@ -128,7 +128,9 @@ export function JobList() {
             <CardTitle className="text-base">Stillinger</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">Laster stillinger...</p>
+            <p className="text-sm text-muted-foreground">
+              Laster stillinger...
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -165,102 +167,102 @@ export function JobList() {
         disabled={false}
       />
       <Card ref={listRef}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-xl">
-              Stillinger
-              {isLoading && (
-                <span className="ml-2 text-sm text-muted-foreground font-normal">
-                  Laster...
-                </span>
-              )}
-            </CardTitle>
-            <CardDescription className="mt-1.5">
-              {totalItems === rawJobs.length && !industryTrim
-                ? `Lastet inn: ${totalItems}`
-                : `Viser ${totalItems} stillinger`}
-            </CardDescription>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-xl">
+                Stillinger
+                {isLoading && (
+                  <span className="ml-2 text-sm text-muted-foreground font-normal">
+                    Laster...
+                  </span>
+                )}
+              </CardTitle>
+              <CardDescription className="mt-1.5">
+                {totalItems === rawJobs.length && !industryTrim
+                  ? `Lastet inn: ${totalItems}`
+                  : `Viser ${totalItems} stillinger`}
+              </CardDescription>
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        {jobs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Ingen aktive stillinger funnet.
-          </p>
-        ) : (
-          <>
-            <ul className="flex flex-col gap-3">
-              {jobs.map((job, i) => (
-                <JobCard key={`${job._feed_entry.uuid}-${i}`} job={job} />
-              ))}
-            </ul>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {jobs.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Ingen aktive stillinger funnet.
+            </p>
+          ) : (
+            <>
+              <ul className="flex flex-col gap-3">
+                {jobs.map((job, i) => (
+                  <JobCard key={`${job._feed_entry.uuid}-${i}`} job={job} />
+                ))}
+              </ul>
 
-            {totalPages > 1 && (
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (currentPage > 1) {
-                          setCurrentPage((p) => p - 1);
+              {totalPages > 1 && (
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage > 1) {
+                            setCurrentPage((p) => p - 1);
+                          }
+                        }}
+                        className={
+                          currentPage === 1
+                            ? "pointer-events-none opacity-50"
+                            : ""
                         }
-                      }}
-                      className={
-                        currentPage === 1
-                          ? "pointer-events-none opacity-50"
-                          : ""
-                      }
-                    />
-                  </PaginationItem>
+                      />
+                    </PaginationItem>
 
-                  {visiblePages.map((page, idx) =>
-                    page === "ellipsis" ? (
-                      <PaginationItem key={`ellipsis-${idx}`}>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    ) : (
-                      <PaginationItem key={page}>
-                        <PaginationLink
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setCurrentPage(page);
-                          }}
-                          isActive={currentPage === page}
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    )
-                  )}
+                    {visiblePages.map((page, idx) =>
+                      page === "ellipsis" ? (
+                        <PaginationItem key={`ellipsis-${idx}`}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      ) : (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setCurrentPage(page);
+                            }}
+                            isActive={currentPage === page}
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ),
+                    )}
 
-                  <PaginationItem>
-                    <PaginationNext
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (currentPage < totalPages) {
-                          setCurrentPage((p) => p + 1);
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage < totalPages) {
+                            setCurrentPage((p) => p + 1);
+                          }
+                        }}
+                        className={
+                          currentPage === totalPages
+                            ? "pointer-events-none opacity-50"
+                            : ""
                         }
-                      }}
-                      className={
-                        currentPage === totalPages
-                          ? "pointer-events-none opacity-50"
-                          : ""
-                      }
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -315,7 +317,8 @@ function JobCard({ job }: { job: JobItem }) {
     "min-w-0 w-full rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50 sm:p-5 block relative z-10 cursor-pointer text-left";
 
   if (href) {
-    const isExternal = href.startsWith("http://") || href.startsWith("https://");
+    const isExternal =
+      href.startsWith("http://") || href.startsWith("https://");
     return (
       <li className="relative list-none">
         <a
