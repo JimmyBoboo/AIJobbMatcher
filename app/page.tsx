@@ -55,11 +55,13 @@ export default function Home() {
             <Card>
               <CardHeader>
                 <div className="mb-2 flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <ListOrdered className="size-5" />
+                  <Sparkles className="size-5" />
                 </div>
-                <CardTitle>Rangert oversikt</CardTitle>
+                <CardTitle>Lag en egen CV med AI</CardTitle>
                 <CardDescription>
-                  Se de beste treffene først i en oversiktlig liste.
+                  Bygg CV-en din steg for steg med hjelp fra AI. Fyll inn
+                  erfaring, utdanning og ferdigheter, og AI hjelper deg med å
+                  fylle ut det som mangler.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -73,6 +75,19 @@ export default function Home() {
                   For hvert treff får du en forklaring på hvorfor stillingen
                   passer.
                 </CardDescription>
+              </CardHeader>
+            </Card>
+            <Card className="sm:col-span-2">
+              <CardHeader className="flex flex-row items-start gap-4 sm:gap-6">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <ListOrdered className="size-5" />
+                </div>
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <CardTitle>Rangert oversikt</CardTitle>
+                  <CardDescription>
+                    Se de beste treffene først i en oversiktlig liste.
+                  </CardDescription>
+                </div>
               </CardHeader>
             </Card>
           </div>

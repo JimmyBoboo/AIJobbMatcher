@@ -58,6 +58,7 @@ function MatchedJobsCardSkeleton() {
 export function DashboardClient() {
   const { data: session, status } = useSession();
   const [parsedCV, setParsedCV] = useState<CVData | null>(null);
+  const [cvFileHash, setCvFileHash] = useState<string | null>(null);
   const [cvLoading, setCvLoading] = useState(true);
 
   const [matchedJobs, setMatchedJobs] = useState<PineconeJobRecord[]>([]);
@@ -66,7 +67,9 @@ export function DashboardClient() {
   const [hasSearched, setHasSearched] = useState(false);
 
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
-  const [profileDisplayName, setProfileDisplayName] = useState<string | null>(null);
+  const [profileDisplayName, setProfileDisplayName] = useState<string | null>(
+    null,
+  );
 
   const fetchJobMatches = useCallback(
     async (cvData: CVData, filters?: JobMatchFilters) => {
@@ -95,13 +98,13 @@ export function DashboardClient() {
         setHasSearched(true);
       } catch (e) {
         setMatchError(
-          e instanceof Error ? e.message : "Kunne ikke hente jobbmatcher"
+          e instanceof Error ? e.message : "Kunne ikke hente jobbmatcher",
         );
       } finally {
         setMatchLoading(false);
       }
     },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -112,6 +115,11 @@ export function DashboardClient() {
         const data = await res.json();
         if (data.cvData && typeof data.cvData === "object") {
           setParsedCV(data.cvData as CVData);
+        }
+        if (typeof data.cvFileHash === "string") {
+          setCvFileHash(data.cvFileHash);
+        } else {
+          setCvFileHash(null);
         }
       } catch {
         // Ignorer feil ved henting
@@ -150,11 +158,18 @@ export function DashboardClient() {
     let cancelled = false;
     fetch("/api/profile")
       .then((res) => (res.ok ? res.json() : null))
-      .then((data: { name?: string | null; profile?: { profileImageUrl?: string } } | null) => {
-        if (cancelled || !data) return;
-        setProfileDisplayName(data.name ?? null);
-        setProfileImageUrl(data.profile?.profileImageUrl ?? null);
-      })
+      .then(
+        (
+          data: {
+            name?: string | null;
+            profile?: { profileImageUrl?: string };
+          } | null,
+        ) => {
+          if (cancelled || !data) return;
+          setProfileDisplayName(data.name ?? null);
+          setProfileImageUrl(data.profile?.profileImageUrl ?? null);
+        },
+      )
       .catch(() => {});
     return () => {
       cancelled = true;
@@ -170,13 +185,16 @@ export function DashboardClient() {
     );
   }
 
-  const handleCVParsed = async (data: CVData) => {
+  const handleCVParsed = async (data: CVData, fileHash?: string) => {
     setParsedCV(data);
+    if (fileHash) setCvFileHash(fileHash);
     try {
+      const body: { cvData: CVData; fileHash?: string } = { cvData: data };
+      if (fileHash !== undefined) body.fileHash = fileHash;
       const res = await fetch("/api/cv/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cvData: data }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -195,8 +213,20 @@ export function DashboardClient() {
           <CvDataView
             cvData={parsedCV}
             profileImageUrl={profileImageUrl}
-            profileDisplayName={profileDisplayName ?? session?.user?.name ?? session?.user?.email ?? null}
-            actions={<CVUpload onParsed={handleCVParsed} compact />}
+            profileDisplayName={
+              profileDisplayName ??
+              session?.user?.name ??
+              session?.user?.email ??
+              null
+            }
+            actions={
+              <CVUpload
+                onParsed={handleCVParsed}
+                compact
+                existingCvData={parsedCV}
+                existingFileHash={cvFileHash}
+              />
+            }
           />
           <MatchedJobs
             matches={matchedJobs}

@@ -2,12 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,10 +27,7 @@ import {
 import type { PineconeJobRecord } from "@/lib/schemas/job-feed";
 import { isApplicationOpen } from "@/lib/job-utils";
 import type { JobMatchFilters } from "@/lib/job-match-filters";
-import {
-  JobFiltersBar,
-  DEFAULT_JOB_FILTERS,
-} from "@/components/job-filters";
+import { JobFiltersBar, DEFAULT_JOB_FILTERS } from "@/components/job-filters";
 
 interface MatchedJobsProps {
   matches: PineconeJobRecord[];
@@ -80,18 +72,27 @@ function formatPublished(value: string | undefined | null): string | null {
 }
 
 const MEDAL_STYLES = [
-  { bg: "bg-yellow-500", text: "text-yellow-50", ring: "ring-yellow-400/30", label: "1." },
-  { bg: "bg-gray-400", text: "text-gray-50", ring: "ring-gray-300/30", label: "2." },
-  { bg: "bg-amber-700", text: "text-amber-50", ring: "ring-amber-600/30", label: "3." },
+  {
+    bg: "bg-yellow-500",
+    text: "text-yellow-50",
+    ring: "ring-yellow-400/30",
+    label: "1.",
+  },
+  {
+    bg: "bg-gray-400",
+    text: "text-gray-50",
+    ring: "ring-gray-300/30",
+    label: "2.",
+  },
+  {
+    bg: "bg-amber-700",
+    text: "text-amber-50",
+    ring: "ring-amber-600/30",
+    label: "3.",
+  },
 ] as const;
 
-function PodiumCard({
-  job,
-  rank,
-}: {
-  job: PineconeJobRecord;
-  rank: number;
-}) {
+function PodiumCard({ job, rank }: { job: PineconeJobRecord; rank: number }) {
   const style = MEDAL_STYLES[rank];
   const isGold = rank === 0;
   const formattedPublished = formatPublished(job.published);
@@ -116,10 +117,14 @@ function PodiumCard({
       </div>
 
       <div className="min-w-0 flex-1">
-        <h3 className={`font-semibold leading-tight line-clamp-2 ${isGold ? "text-base" : "text-sm"}`}>
+        <h3
+          className={`font-semibold leading-tight line-clamp-2 ${isGold ? "text-base" : "text-sm"}`}
+        >
           {job.title}
         </h3>
-        <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">{job.employer}</p>
+        <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">
+          {job.employer}
+        </p>
       </div>
 
       <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -132,7 +137,9 @@ function PodiumCard({
         {(() => {
           const engagement = job.engagement_type?.trim() || "";
           const extent =
-            job.extent != null && String(job.extent).trim() && String(job.extent).toLowerCase() !== "null"
+            job.extent != null &&
+            String(job.extent).trim() &&
+            String(job.extent).toLowerCase() !== "null"
               ? String(job.extent).trim()
               : "";
           const parts = [engagement, extent].filter(Boolean);
@@ -164,13 +171,7 @@ function PodiumCard({
   );
 }
 
-function ListRow({
-  job,
-  rank,
-}: {
-  job: PineconeJobRecord;
-  rank: number;
-}) {
+function ListRow({ job, rank }: { job: PineconeJobRecord; rank: number }) {
   const formattedPublished = formatPublished(job.published);
   const formattedDue = formatApplicationDue(job.application_due);
 
@@ -224,13 +225,13 @@ export function MatchedJobs({
   const [currentPage, setCurrentPage] = useState(1);
 
   const openMatches = matches.filter((j) =>
-    isApplicationOpen(j.application_due)
+    isApplicationOpen(j.application_due),
   );
   const rest = openMatches.slice(3);
   const totalRestPages = Math.max(1, Math.ceil(rest.length / MATCHES_PER_PAGE));
   const restPage = rest.slice(
     (currentPage - 1) * MATCHES_PER_PAGE,
-    currentPage * MATCHES_PER_PAGE
+    currentPage * MATCHES_PER_PAGE,
   );
 
   useEffect(() => {
@@ -359,7 +360,9 @@ export function MatchedJobs({
       />
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-lg font-semibold">Topp {openMatches.length} matcher</h2>
+        <h2 className="text-lg font-semibold">
+          Topp {openMatches.length} matcher
+        </h2>
         <Button
           variant="outline"
           onClick={handleSearch}

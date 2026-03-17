@@ -1,16 +1,49 @@
 import { gateway } from "@ai-sdk/gateway";
 import { generateText, Output, convertToModelMessages } from "ai";
+import { getToken } from "next-auth/jwt";
 import { cvSchema } from "@/lib/schemas/cv";
+import { getAdminFirestore } from "@/lib/firebase-admin";
+
+const USERS_COLLECTION = "users";
 
 export async function POST(request: Request) {
   try {
-    const { fileUrl, mimeType } = await request.json();
+    const body = await request.json();
+    const { fileUrl, mimeType, fileHash } = body as {
+      fileUrl?: string;
+      mimeType?: string;
+      fileHash?: string;
+    };
 
     if (!fileUrl || !mimeType) {
       return Response.json(
         { error: "Mangler fil eller filtype" },
         { status: 400 }
       );
+    }
+
+    // Re-upload optimization: same file → skip AI. Future: partial re-parse/diff-based
+    // updates if we store previous extracted text and detect changed sections.
+    if (fileHash && typeof fileHash === "string") {
+      const token = await getToken({
+        req: request,
+        secret: process.env.NEXTAUTH_SECRET,
+      });
+      if (token?.id && typeof token.id === "string") {
+        const db = getAdminFirestore();
+        const userDoc = await db
+          .collection(USERS_COLLECTION)
+          .doc(token.id)
+          .get();
+        const storedHash = userDoc.data()?.cvFileHash as string | undefined;
+        const storedCvData = userDoc.data()?.cvData as Record<string, unknown> | undefined;
+        if (storedHash === fileHash && storedCvData) {
+          return Response.json({
+            data: storedCvData,
+            skipped: true,
+          });
+        }
+      }
     }
 
     // Convert UI messages to model messages format

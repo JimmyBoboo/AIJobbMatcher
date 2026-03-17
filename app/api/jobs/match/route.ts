@@ -86,7 +86,7 @@ function buildCvSummary(cv: CVData): string {
       .slice(0, 3)
       .map(
         (e) =>
-          `${e.degree}${e.field ? ` i ${e.field}` : ""} fra ${e.institution}`
+          `${e.degree}${e.field ? ` i ${e.field}` : ""} fra ${e.institution}`,
       );
     parts.push(`Utdanning: ${eduLines.join(", ")}`);
   }
@@ -102,7 +102,7 @@ const searchQuerySchema = z.object({
   searchQuery: z
     .string()
     .describe(
-      "Et søk på norsk med stillingstittel og nøkkelferdigheter, 5-10 ord"
+      "Et søk på norsk med stillingstittel og nøkkelferdigheter, 5-10 ord",
     ),
 });
 
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Ugyldig CV-data", details: parsed.error.flatten() },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -129,8 +129,14 @@ export async function POST(request: NextRequest) {
     const cvSummary = buildCvSummary(cvData);
 
     // Optional filter params from request body
-    const engagementType = typeof body?.engagementType === "string" ? body.engagementType.trim() || undefined : undefined;
-    const countyOverride = body?.county != null && body?.county !== "" ? String(body.county).trim() : undefined;
+    const engagementType =
+      typeof body?.engagementType === "string"
+        ? body.engagementType.trim() || undefined
+        : undefined;
+    const countyOverride =
+      body?.county != null && body?.county !== ""
+        ? String(body.county).trim()
+        : undefined;
 
     // County: use override if provided and not "ANY"; otherwise use CV-derived
     let county: string | null = null;
@@ -159,7 +165,7 @@ Regler:
     if (!output) {
       return NextResponse.json(
         { error: "Kunne ikke generere søk fra CV" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -167,7 +173,9 @@ Regler:
 
     // Step 2: Search Pinecone for matching jobs
     const pc = getPineconeClient();
-    const namespace = pc.index(PINECONE_JOB_INDEX).namespace(PINECONE_JOB_NAMESPACE);
+    const namespace = pc
+      .index(PINECONE_JOB_INDEX)
+      .namespace(PINECONE_JOB_NAMESPACE);
 
     const filterConditions: object[] = [];
     if (county) {
@@ -177,8 +185,7 @@ Regler:
       if (engagementType === "Heltid" || engagementType === "Deltid") {
         const extentValues =
           EXTENT_INDEX_VALUES[engagementType as "Heltid" | "Deltid"];
-        const engagementValues =
-          ENGAGEMENT_TYPE_INDEX_VALUES[engagementType];
+        const engagementValues = ENGAGEMENT_TYPE_INDEX_VALUES[engagementType];
         const orParts: object[] = [];
         if (extentValues?.length > 0) {
           orParts.push({ extent: { $in: extentValues } });
@@ -188,7 +195,7 @@ Regler:
         }
         if (orParts.length > 0) {
           filterConditions.push(
-            orParts.length === 1 ? orParts[0]! : { $or: orParts }
+            orParts.length === 1 ? orParts[0]! : { $or: orParts },
           );
         }
       } else {
@@ -206,7 +213,10 @@ Regler:
       inputs: { text: searchQuery },
     };
     if (filterConditions.length > 0) {
-      query.filter = filterConditions.length === 1 ? filterConditions[0] : { $and: filterConditions };
+      query.filter =
+        filterConditions.length === 1
+          ? filterConditions[0]
+          : { $and: filterConditions };
     }
 
     const response = await namespace.searchRecords({
@@ -246,20 +256,20 @@ Regler:
           content: f.content ?? undefined,
           nav_feed_path: f.nav_feed_path ?? undefined,
         };
-      }
+      },
     );
 
     const userId = token.id;
     const db = getAdminFirestore();
     const matchesForFirestore = JSON.parse(
-      JSON.stringify(matches)
+      JSON.stringify(matches),
     ) as PineconeJobRecord[];
     await db.collection(USERS_COLLECTION).doc(userId).set(
       {
         matchedJobs: matchesForFirestore,
         matchedJobsSavedAt: FieldValue.serverTimestamp(),
       },
-      { merge: true }
+      { merge: true },
     );
 
     return NextResponse.json({ matches, searchQuery });
@@ -268,7 +278,7 @@ Regler:
     console.error("Job match error:", message);
     return NextResponse.json(
       { error: "Kunne ikke finne matchende jobber.", details: message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

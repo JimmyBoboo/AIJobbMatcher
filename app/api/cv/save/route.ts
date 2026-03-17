@@ -26,11 +26,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const fileHash = body?.fileHash as string | undefined;
     const db = getAdminFirestore();
-    await db.collection(USERS_COLLECTION).doc(userId).update({
+    const updateData: Record<string, unknown> = {
       cvData: parsed.data,
       cvDataUpdatedAt: FieldValue.serverTimestamp(),
-    });
+    };
+    if (fileHash !== undefined) {
+      updateData.cvFileHash = fileHash;
+    }
+    await db.collection(USERS_COLLECTION).doc(userId).update(updateData);
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err) {

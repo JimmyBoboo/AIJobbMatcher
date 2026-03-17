@@ -11,34 +11,43 @@ import {
 } from "@/components/ui/card";
 import { FileUp, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import type { CVData } from "@/lib/schemas/cv";
+import { hashCvFile } from "@/lib/cv-file-hash";
 
-type UploadStatus = "idle" | "uploading" | "success" | "error";
+type UploadStatus = "idle" | "checking" | "uploading" | "success" | "error";
 
 interface CVUploadProps {
-  onParsed?: (data: CVData) => void;
+  onParsed?: (data: CVData, fileHash?: string) => void;
   /** Når true: kun knapp for å erstatte CV (ingen stor opplastingskort) */
   compact?: boolean;
+  /** Eksisterende CV-data – brukes for å hoppe over AI ved identisk fil */
+  existingCvData?: CVData | null;
+  /** Hash av sist opplastede fil – brukes for å hoppe over AI ved identisk fil */
+  existingFileHash?: string | null;
 }
 
-export function CVUpload({ onParsed, compact = false }: CVUploadProps) {
+export function CVUpload({
+  onParsed,
+  compact = false,
+  existingCvData = null,
+  existingFileHash = null,
+}: CVUploadProps) {
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [cvData, setCvData] = useState<CVData | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [skippedParse, setSkippedParse] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (file.type !== "application/pdf") {
       setError("Kun PDF-filer er støttet");
       setStatus("error");
       return;
     }
 
-    // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       setError("Filen er for stor. Maks 10MB.");
       setStatus("error");
@@ -46,11 +55,31 @@ export function CVUpload({ onParsed, compact = false }: CVUploadProps) {
     }
 
     setFileName(file.name);
-    setStatus("uploading");
+    setStatus("checking");
     setError(null);
+    setSkippedParse(false);
 
     try {
-      // Convert file to data URL
+      const fileHash = await hashCvFile(file);
+
+      // Same file as current CV – skip AI parse and use existing data
+      if (
+        existingFileHash &&
+        existingCvData &&
+        fileHash === existingFileHash
+      ) {
+        setCvData(existingCvData);
+        setStatus("success");
+        setSkippedParse(true);
+        onParsed?.(existingCvData, fileHash);
+        if (compact) {
+          setTimeout(() => handleReset(), 2000);
+        }
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+
+      setStatus("uploading");
       const dataUrl = await fileToDataUrl(file);
 
       const response = await fetch("/api/cv/parse", {
@@ -59,6 +88,7 @@ export function CVUpload({ onParsed, compact = false }: CVUploadProps) {
         body: JSON.stringify({
           fileUrl: dataUrl,
           mimeType: file.type,
+          fileHash,
         }),
       });
 
@@ -70,10 +100,11 @@ export function CVUpload({ onParsed, compact = false }: CVUploadProps) {
         throw new Error(errorMsg);
       }
 
-      const { data } = await response.json();
+      const json = await response.json();
+      const data = json.data as CVData;
       setCvData(data);
       setStatus("success");
-      onParsed?.(data);
+      onParsed?.(data, fileHash);
       if (compact) {
         handleReset();
       }
@@ -82,7 +113,6 @@ export function CVUpload({ onParsed, compact = false }: CVUploadProps) {
       setStatus("error");
     }
 
-    // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -129,10 +159,22 @@ export function CVUpload({ onParsed, compact = false }: CVUploadProps) {
             Last opp ny CV
           </Button>
         )}
+        {status === "checking" && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" />
+            Sjekker fil…
+          </div>
+        )}
         {status === "uploading" && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
-            Analyserer CV…
+            Laster opp og analyserer CV…
+          </div>
+        )}
+        {status === "success" && skippedParse && (
+          <div className="flex items-center gap-2 text-sm text-green-600">
+            <CheckCircle2 className="size-4 shrink-0" />
+            Samme fil – bruker lagret CV
           </div>
         )}
         {status === "error" && (
@@ -179,11 +221,21 @@ export function CVUpload({ onParsed, compact = false }: CVUploadProps) {
           </div>
         )}
 
+        {status === "checking" && (
+          <div className="flex flex-col items-center gap-4 py-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="text-center">
+              <p className="font-medium">Sjekker fil…</p>
+              <p className="text-sm text-muted-foreground">{fileName}</p>
+            </div>
+          </div>
+        )}
+
         {status === "uploading" && (
           <div className="flex flex-col items-center gap-4 py-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <div className="text-center">
-              <p className="font-medium">Analyserer CV...</p>
+              <p className="font-medium">Laster opp og analyserer CV…</p>
               <p className="text-sm text-muted-foreground">{fileName}</p>
             </div>
           </div>
@@ -205,7 +257,9 @@ export function CVUpload({ onParsed, compact = false }: CVUploadProps) {
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2 text-green-600">
               <CheckCircle2 className="h-5 w-5" />
-              <span className="font-medium">CV analysert!</span>
+              <span className="font-medium">
+                {skippedParse ? "Samme fil – bruker lagret CV" : "CV analysert!"}
+              </span>
             </div>
 
             <div className="rounded-lg bg-muted p-4">

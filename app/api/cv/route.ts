@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
     const cvFileName = data?.cvFileName as string | undefined;
     const cvData = data?.cvData as Record<string, unknown> | undefined;
     const cvDataUpdatedAt = data?.cvDataUpdatedAt as { toDate?: () => Date } | undefined;
+    const cvFileHash = data?.cvFileHash as string | undefined;
 
     const hasCv = Boolean(cvStoragePath);
     const cvUploadedAtIso =
@@ -36,6 +37,7 @@ export async function GET(request: NextRequest) {
       cvFileName: hasCv ? cvFileName : undefined,
       cvData: cvData ?? undefined,
       cvDataUpdatedAt: cvData ? cvDataUpdatedAtIso : undefined,
+      cvFileHash: cvFileHash ?? undefined,
     });
   } catch (err) {
     console.error("CV status error:", err);
