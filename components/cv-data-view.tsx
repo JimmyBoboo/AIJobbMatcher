@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { ChevronDown, ChevronUp, MapPin, User } from "lucide-react";
+import { ChevronDown, ChevronUp, FileDown, MapPin, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { downloadCvPdf } from "@/lib/cv-to-pdf";
 import type { CVData } from "@/lib/schemas/cv";
 
 interface CvDataViewProps {
@@ -83,11 +85,18 @@ export function CvDataView({
             <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
           )}
         </button>
-        {actions && (
-          <div className="shrink-0 border-t pt-3 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-3">
-            {actions}
-          </div>
-        )}
+        <div className="flex shrink-0 flex-wrap items-center gap-2 border-t pt-3 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => downloadCvPdf(cvData)}
+            className="gap-1.5"
+          >
+            <FileDown className="h-3.5 w-3.5" />
+            Last ned som PDF
+          </Button>
+          {actions}
+        </div>
       </div>
 
       {expanded && (
@@ -141,6 +150,17 @@ export function CvDataView({
                   </span>
                 )}
               </div>
+            </div>
+          )}
+
+          {cvData.additionalInfo?.trim() && (
+            <div>
+              <h4 className="text-xs font-medium text-muted-foreground">
+                Tilleggsinformasjon
+              </h4>
+              <p className="mt-1 whitespace-pre-wrap text-sm">
+                {cvData.additionalInfo.trim()}
+              </p>
             </div>
           )}
         </div>

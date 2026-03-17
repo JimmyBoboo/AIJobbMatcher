@@ -27,8 +27,13 @@ export const cvSchema = z.object({
     name: z.string().describe("Fullt navn"),
     email: z.string().nullable().describe("E-postadresse"),
     phone: z.string().nullable().describe("Telefonnummer"),
-    location: z.string().nullable().describe("Bosted eller adresse"),
+    location: z.string().nullable().describe("Bosted eller adresse (by, land)"),
     linkedIn: z.string().nullable().describe("LinkedIn-profil URL"),
+    portfolio: z
+      .string()
+      .nullable()
+      .default(null)
+      .describe("Portefølje / nettside URL"),
     birthYear: z
       .number()
       .nullable()
@@ -61,6 +66,11 @@ export const cvSchema = z.object({
   certifications: z
     .array(z.string())
     .describe("Sertifiseringer og kurs"),
+  additionalInfo: z
+    .string()
+    .nullable()
+    .default(null)
+    .describe("Tillegg: prosjekter/prestasjoner, interesser, frivillig arbeid"),
 });
 
 export type CVData = z.infer<typeof cvSchema>;

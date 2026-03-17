@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { AiCvCard } from "@/components/ai-cv-card";
 import { CVUpload } from "@/components/cv-upload";
 import { CvDataView } from "@/components/cv-data-view";
 import { MatchedJobs } from "@/components/matched-jobs";
@@ -206,7 +207,12 @@ export function DashboardClient() {
           />
         </>
       )}
-      {!cvLoading && !parsedCV && <CVUpload onParsed={handleCVParsed} />}
+      {!cvLoading && !parsedCV && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <AiCvCard />
+          <CVUpload onParsed={handleCVParsed} />
+        </div>
+      )}
     </div>
   );
 }

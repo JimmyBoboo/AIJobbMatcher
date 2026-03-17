@@ -68,6 +68,17 @@ export function Navbar() {
                   Stillinger
                 </Link>
                 <Link
+                  href="/lag-egen-cv"
+                  className={cn(
+                    "transition-colors hover:text-foreground/80",
+                    pathname === "/lag-egen-cv"
+                      ? "text-foreground font-medium"
+                      : "text-foreground/60"
+                  )}
+                >
+                  Lag egen CV
+                </Link>
+                <Link
                   href="/profile"
                   className={cn(
                     "transition-colors hover:text-foreground/80",
@@ -118,6 +129,18 @@ export function Navbar() {
                       )}
                     >
                       Stillinger
+                    </Link>
+                    <Link
+                      href="/lag-egen-cv"
+                      onClick={closeSheet}
+                      className={cn(
+                        "rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted",
+                        pathname === "/lag-egen-cv"
+                          ? "text-foreground bg-muted"
+                          : "text-foreground/80"
+                      )}
+                    >
+                      Lag egen CV
                     </Link>
                     <Link
                       href="/profile"
