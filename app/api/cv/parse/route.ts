@@ -1,12 +1,13 @@
 import { gateway } from "@ai-sdk/gateway";
 import { generateText, Output, convertToModelMessages } from "ai";
 import { getToken } from "next-auth/jwt";
+import { NextRequest } from "next/server";
 import { cvSchema } from "@/lib/schemas/cv";
 import { getAdminFirestore } from "@/lib/firebase-admin";
 
 const USERS_COLLECTION = "users";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { fileUrl, mimeType, fileHash } = body as {
