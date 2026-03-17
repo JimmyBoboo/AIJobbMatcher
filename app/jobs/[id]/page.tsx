@@ -1,12 +1,13 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, Bookmark, BookmarkCheck } from "lucide-react";
 import {
   buildKeyPoints,
   buildKeyPointsFromNav,
@@ -29,6 +30,55 @@ export default function JobDetailPage() {
   const [navDetail, setNavDetail] = useState<NavJobDetailJson | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const { data: session, status } = useSession();
+  const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
+  const [savedLoading, setSavedLoading] = useState(false);
+  const isSaved = id ? savedJobIds.includes(id) : false;
+
+  useEffect(() => {
+    if (status !== "authenticated" || !id) return;
+    let cancelled = false;
+    setSavedLoading(true);
+    fetch("/api/jobs/saved")
+      .then((res) => (res.ok ? res.json() : { jobIds: [] }))
+      .then((data: { jobIds: string[] }) => {
+        if (!cancelled) setSavedJobIds(data.jobIds ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setSavedJobIds([]);
+      })
+      .finally(() => {
+        if (!cancelled) setSavedLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [status, id]);
+
+  const handleSaveJob = useCallback(async () => {
+    if (!id) return;
+    if (isSaved) {
+      const res = await fetch(
+        `/api/jobs/saved?jobId=${encodeURIComponent(id)}`,
+        { method: "DELETE" }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setSavedJobIds((data as { jobIds: string[] }).jobIds ?? []);
+      }
+    } else {
+      const res = await fetch("/api/jobs/saved", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId: id }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSavedJobIds((data as { jobIds: string[] }).jobIds ?? []);
+      }
+    }
+  }, [id, isSaved]);
 
   useEffect(() => {
     if (!id) {
@@ -122,13 +172,36 @@ export default function JobDetailPage() {
 
     return (
       <div className="container mx-auto max-w-3xl px-4 py-8 sm:px-6">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Tilbake til jobbliste
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Tilbake til jobbliste
+          </Link>
+          {status === "authenticated" && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              disabled={savedLoading}
+              onClick={handleSaveJob}
+            >
+              {isSaved ? (
+                <>
+                  <BookmarkCheck className="h-4 w-4" />
+                  Fjern fra lagrede
+                </>
+              ) : (
+                <>
+                  <Bookmark className="h-4 w-4" />
+                  Lagre stilling
+                </>
+              )}
+            </Button>
+          )}
+        </div>
 
         {applicationClosed && (
           <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
@@ -271,13 +344,36 @@ export default function JobDetailPage() {
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8 sm:px-6">
-      <Link
-        href="/dashboard"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Tilbake til jobbliste
-      </Link>
+      <div className="flex flex-wrap items-center gap-2">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Tilbake til jobbliste
+        </Link>
+        {status === "authenticated" && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            disabled={savedLoading}
+            onClick={handleSaveJob}
+          >
+            {isSaved ? (
+              <>
+                <BookmarkCheck className="h-4 w-4" />
+                Fjern fra lagrede
+              </>
+            ) : (
+              <>
+                <Bookmark className="h-4 w-4" />
+                Lagre stilling
+              </>
+            )}
+          </Button>
+        )}
+      </div>
 
       {applicationClosed && (
         <p className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">

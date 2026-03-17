@@ -6,10 +6,7 @@ import { CVUpload } from "@/components/cv-upload";
 import { CvDataView } from "@/components/cv-data-view";
 import { MatchedJobs } from "@/components/matched-jobs";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import type { CVData } from "@/lib/schemas/cv";
 import {
   pineconeJobRecordSchema,
@@ -66,6 +63,9 @@ export function DashboardClient() {
   const [matchLoading, setMatchLoading] = useState(false);
   const [matchError, setMatchError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [profileDisplayName, setProfileDisplayName] = useState<string | null>(null);
 
   const fetchJobMatches = useCallback(
     async (cvData: CVData, filters?: JobMatchFilters) => {
@@ -144,6 +144,22 @@ export function DashboardClient() {
     };
   }, [status]);
 
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    let cancelled = false;
+    fetch("/api/profile")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { name?: string | null; profile?: { profileImageUrl?: string } } | null) => {
+        if (cancelled || !data) return;
+        setProfileDisplayName(data.name ?? null);
+        setProfileImageUrl(data.profile?.profileImageUrl ?? null);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [status]);
+
   if (status === "loading") {
     return (
       <div className="mt-6 flex flex-col gap-4">
@@ -177,6 +193,8 @@ export function DashboardClient() {
         <>
           <CvDataView
             cvData={parsedCV}
+            profileImageUrl={profileImageUrl}
+            profileDisplayName={profileDisplayName ?? session?.user?.name ?? session?.user?.email ?? null}
             actions={<CVUpload onParsed={handleCVParsed} compact />}
           />
           <MatchedJobs

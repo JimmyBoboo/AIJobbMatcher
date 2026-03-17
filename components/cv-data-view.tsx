@@ -2,20 +2,38 @@
 
 import { useState, type ReactNode } from "react";
 import { ChevronDown, ChevronUp, MapPin, User } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { CVData } from "@/lib/schemas/cv";
 
 interface CvDataViewProps {
   cvData: CVData;
   title?: string;
   actions?: ReactNode;
+  /** Profile image URL (e.g. from /api/profile/avatar). When set, shown instead of the User icon. */
+  profileImageUrl?: string | null;
+  /** Display name for avatar fallback initials when no image. */
+  profileDisplayName?: string | null;
+}
+
+function getInitials(name: string | null | undefined): string {
+  if (!name?.trim()) return "?";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
 }
 
 export function CvDataView({
   cvData,
   title = "Din CV",
   actions,
+  profileImageUrl,
+  profileDisplayName,
 }: CvDataViewProps) {
   const [expanded, setExpanded] = useState(false);
+  const showAvatar = profileImageUrl != null || profileDisplayName != null;
+  const displayName = profileDisplayName ?? cvData.personalInfo.name ?? "";
 
   return (
     <div className="rounded-lg border bg-card text-card-foreground">
@@ -25,9 +43,20 @@ export function CvDataView({
           onClick={() => setExpanded(!expanded)}
           className="flex min-w-0 flex-1 items-center gap-3 text-left"
         >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-            <User className="h-4 w-4 text-primary" />
-          </div>
+          {showAvatar ? (
+            <Avatar className="h-8 w-8 shrink-0">
+              {profileImageUrl && (
+                <AvatarImage src={profileImageUrl} alt={displayName} />
+              )}
+              <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                {getInitials(displayName)}
+              </AvatarFallback>
+            </Avatar>
+          ) : (
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+              <User className="h-4 w-4 text-primary" />
+            </div>
+          )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium leading-tight">
               {cvData.personalInfo.name}

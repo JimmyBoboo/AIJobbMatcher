@@ -67,6 +67,17 @@ export function Navbar() {
                 >
                   Stillinger
                 </Link>
+                <Link
+                  href="/profile"
+                  className={cn(
+                    "transition-colors hover:text-foreground/80",
+                    pathname === "/profile"
+                      ? "text-foreground font-medium"
+                      : "text-foreground/60"
+                  )}
+                >
+                  Profil
+                </Link>
               </nav>
               <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
                 <SheetTrigger asChild>
@@ -107,6 +118,18 @@ export function Navbar() {
                       )}
                     >
                       Stillinger
+                    </Link>
+                    <Link
+                      href="/profile"
+                      onClick={closeSheet}
+                      className={cn(
+                        "rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted",
+                        pathname === "/profile"
+                          ? "text-foreground bg-muted"
+                          : "text-foreground/80"
+                      )}
+                    >
+                      Profil
                     </Link>
                     <div className="flex items-center gap-1 pt-2">
                       <ThemeToggle />
