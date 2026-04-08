@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
   const modelMessages = await convertToModelMessages(messages);
 
   const result = streamText({
-    model: gateway("anthropic/claude-3.5-sonnet"),
+    model: gateway("anthropic/claude-sonnet-4"),
     system: SYSTEM_PROMPT,
     messages: modelMessages,
   });

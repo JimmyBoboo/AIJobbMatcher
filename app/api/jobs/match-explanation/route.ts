@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
         : `${job.title} hos ${job.employer}. ${job.occupation ? `Stillingsområde: ${job.occupation}.` : ""}`;
 
     const { output } = await generateText({
-      model: gateway("anthropic/claude-3.5-sonnet"),
+      model: gateway("anthropic/claude-sonnet-4"),
       output: Output.object({ schema: explanationSchema }),
       prompt: `Du er en karriereveileder. Basert på kandidatens CV-sammendrag og stillingsannonsen, skriv en kort forklaring på norsk (2-4 setninger) om hvorfor denne stillingen passer for kandidaten. Vær konkret: nevne erfaring, ferdigheter eller utdanning som matcher. Skriv kun forklaringen, ingen overskrifter.
 

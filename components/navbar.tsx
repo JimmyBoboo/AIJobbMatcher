@@ -51,7 +51,7 @@ export function Navbar() {
                     "transition-colors hover:text-foreground/80",
                     pathname === "/dashboard"
                       ? "text-foreground font-medium"
-                      : "text-foreground/60"
+                      : "text-foreground/60",
                   )}
                 >
                   Dashboard
@@ -62,7 +62,7 @@ export function Navbar() {
                     "transition-colors hover:text-foreground/80",
                     pathname === "/jobs"
                       ? "text-foreground font-medium"
-                      : "text-foreground/60"
+                      : "text-foreground/60",
                   )}
                 >
                   Stillinger
@@ -73,7 +73,7 @@ export function Navbar() {
                     "transition-colors hover:text-foreground/80",
                     pathname === "/lag-egen-cv"
                       ? "text-foreground font-medium"
-                      : "text-foreground/60"
+                      : "text-foreground/60",
                   )}
                 >
                   Lag egen CV
@@ -84,7 +84,7 @@ export function Navbar() {
                     "transition-colors hover:text-foreground/80",
                     pathname === "/profile"
                       ? "text-foreground font-medium"
-                      : "text-foreground/60"
+                      : "text-foreground/60",
                   )}
                 >
                   Profil
@@ -113,7 +113,7 @@ export function Navbar() {
                         "rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted",
                         pathname === "/dashboard"
                           ? "text-foreground bg-muted"
-                          : "text-foreground/80"
+                          : "text-foreground/80",
                       )}
                     >
                       Dashboard
@@ -125,7 +125,7 @@ export function Navbar() {
                         "rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted",
                         pathname === "/jobs"
                           ? "text-foreground bg-muted"
-                          : "text-foreground/80"
+                          : "text-foreground/80",
                       )}
                     >
                       Stillinger
@@ -137,7 +137,7 @@ export function Navbar() {
                         "rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted",
                         pathname === "/lag-egen-cv"
                           ? "text-foreground bg-muted"
-                          : "text-foreground/80"
+                          : "text-foreground/80",
                       )}
                     >
                       Lag egen CV
@@ -149,7 +149,7 @@ export function Navbar() {
                         "rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted",
                         pathname === "/profile"
                           ? "text-foreground bg-muted"
-                          : "text-foreground/80"
+                          : "text-foreground/80",
                       )}
                     >
                       Profil

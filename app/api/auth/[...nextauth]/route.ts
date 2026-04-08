@@ -31,10 +31,7 @@ const handler = NextAuth({
         const data = doc.data();
         const passwordHash = data.passwordHash as string | undefined;
         if (!passwordHash) return null;
-        const valid = await bcrypt.compare(
-          credentials.password,
-          passwordHash
-        );
+        const valid = await bcrypt.compare(credentials.password, passwordHash);
         if (!valid) return null;
         return {
           id: doc.id,

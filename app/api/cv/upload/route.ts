@@ -5,7 +5,7 @@ import { getAdminStorageBucket } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 
 const USERS_COLLECTION = "users";
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB (samme som CV-parse i dashboard)
 const ALLOWED_TYPES = [
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",

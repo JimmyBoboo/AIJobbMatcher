@@ -89,7 +89,8 @@ function ensureSpace(doc: jsPDF, y: number, need: number): number {
   return y;
 }
 
-export function downloadCvPdf(cvData: CVData, filename?: string): void {
+/** Bygger CV som PDF-dokument (brukes til nedlasting og servergenerering). */
+export function createCvPdfDocument(cvData: CVData): jsPDF {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
 
   // —— Header (full width) ——
@@ -268,6 +269,18 @@ export function downloadCvPdf(cvData: CVData, filename?: string): void {
     );
   }
 
+  return doc;
+}
+
+/** PDF som bytes (f.eks. for API-svar eller Blob). */
+export function cvDataToPdfUint8Array(cvData: CVData): Uint8Array {
+  const doc = createCvPdfDocument(cvData);
+  const out = doc.output("arraybuffer");
+  return new Uint8Array(out as ArrayBuffer);
+}
+
+export function downloadCvPdf(cvData: CVData, filename?: string): void {
+  const doc = createCvPdfDocument(cvData);
   const safeName =
     filename ??
     `CV_${cvData.personalInfo.name.replace(/\s+/g, "_").slice(0, 30)}.pdf`;

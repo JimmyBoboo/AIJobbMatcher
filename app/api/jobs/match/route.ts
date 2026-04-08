@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
 
     // Step 1: Generate search query from CV using Claude
     const { output } = await generateText({
-      model: gateway("anthropic/claude-3.5-sonnet"),
+      model: gateway("anthropic/claude-sonnet-4"),
       output: Output.object({ schema: searchQuerySchema }),
       prompt: `Du er en ekspert på jobbsøk i Norge. Basert på følgende CV-informasjon, generer et søk på norsk (5-10 ord) som fanger personens mest relevante stillingstittel og topp 2-3 nøkkelferdigheter. Søket brukes til semantisk vektorsøk i en stillingsannonsedatabase.
 

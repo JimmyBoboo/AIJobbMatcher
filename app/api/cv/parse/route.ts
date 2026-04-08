@@ -76,7 +76,7 @@ Viktige instruksjoner:
     const modelMessages = await convertToModelMessages(uiMessages);
 
     const { output } = await generateText({
-      model: gateway("anthropic/claude-3.5-sonnet"),
+      model: gateway("anthropic/claude-sonnet-4"),
       output: Output.object({ schema: cvSchema }),
       messages: modelMessages,
     });

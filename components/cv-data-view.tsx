@@ -15,6 +15,10 @@ interface CvDataViewProps {
   profileImageUrl?: string | null;
   /** Display name for avatar fallback initials when no image. */
   profileDisplayName?: string | null;
+  /** Når satt, brukes denne i stedet for standard PDF-generering fra strukturerte data. */
+  onDownloadPdf?: () => void | Promise<void>;
+  /** Når false, vises ikke «Last ned som PDF» (f.eks. på dashboard). Standard: true. */
+  showPdfDownload?: boolean;
 }
 
 function getInitials(name: string | null | undefined): string {
@@ -32,6 +36,8 @@ export function CvDataView({
   actions,
   profileImageUrl,
   profileDisplayName,
+  onDownloadPdf,
+  showPdfDownload = true,
 }: CvDataViewProps) {
   const [expanded, setExpanded] = useState(false);
   const showAvatar = profileImageUrl != null || profileDisplayName != null;
@@ -86,15 +92,23 @@ export function CvDataView({
           )}
         </button>
         <div className="flex shrink-0 flex-wrap items-center gap-2 border-t pt-3 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => downloadCvPdf(cvData)}
-            className="gap-1.5"
-          >
-            <FileDown className="h-3.5 w-3.5" />
-            Last ned som PDF
-          </Button>
+          {showPdfDownload && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (onDownloadPdf) {
+                  void onDownloadPdf();
+                } else {
+                  downloadCvPdf(cvData);
+                }
+              }}
+              className="gap-1.5"
+            >
+              <FileDown className="h-3.5 w-3.5" />
+              Last ned som PDF
+            </Button>
+          )}
           {actions}
         </div>
       </div>

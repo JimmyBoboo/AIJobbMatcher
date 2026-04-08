@@ -10,9 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Globe, MapPin, Mail, Trash2 } from "lucide-react";
+import { FileDown, Globe, MapPin, Mail, Trash2 } from "lucide-react";
 import type { UserProfile } from "@/lib/schemas/profile";
 import type { PineconeJobRecord } from "@/lib/schemas/job-feed";
+import { cvSchema, type CVData } from "@/lib/schemas/cv";
+import { CvDataView } from "@/components/cv-data-view";
+import { CvDataViewSkeleton } from "@/components/cv-data-view-skeleton";
+import { CVUpload } from "@/components/cv-upload";
+import { downloadCvPdf } from "@/lib/cv-to-pdf";
 
 function getInitials(name: string | null | undefined, email: string | null | undefined): string {
   if (name?.trim()) {
@@ -65,6 +70,72 @@ export function ProfileClient() {
   const [avatarKey, setAvatarKey] = useState(0);
   const [avatarError, setAvatarError] = useState<string | null>(null);
 
+  const [profileCvLoading, setProfileCvLoading] = useState(true);
+  const [profileCvData, setProfileCvData] = useState<CVData | null>(null);
+  const [profileCvHasFile, setProfileCvHasFile] = useState(false);
+  const [profileCvStoredKind, setProfileCvStoredKind] = useState<
+    "pdf" | "docx" | null
+  >(null);
+  const [profileCvFileName, setProfileCvFileName] = useState<string | null>(
+    null,
+  );
+  const [profileCvUploadedAt, setProfileCvUploadedAt] = useState<
+    string | null
+  >(null);
+  const [profileCvDataUpdatedAt, setProfileCvDataUpdatedAt] = useState<
+    string | null
+  >(null);
+  const [profileCvFileHash, setProfileCvFileHash] = useState<string | null>(
+    null,
+  );
+
+  const refreshProfileCv = useCallback(async () => {
+    try {
+      const res = await fetch("/api/cv");
+      if (!res.ok) return;
+      const data = (await res.json()) as {
+        hasCv?: boolean;
+        cvStoredKind?: string;
+        cvFileName?: string;
+        cvUploadedAt?: string;
+        cvData?: unknown;
+        cvDataUpdatedAt?: string;
+        cvFileHash?: string;
+      };
+      setProfileCvHasFile(Boolean(data.hasCv));
+      setProfileCvFileHash(
+        typeof data.cvFileHash === "string" ? data.cvFileHash : null,
+      );
+      setProfileCvStoredKind(
+        data.cvStoredKind === "pdf" || data.cvStoredKind === "docx"
+          ? data.cvStoredKind
+          : null,
+      );
+      setProfileCvFileName(
+        typeof data.cvFileName === "string" ? data.cvFileName : null,
+      );
+      setProfileCvUploadedAt(
+        typeof data.cvUploadedAt === "string" ? data.cvUploadedAt : null,
+      );
+      setProfileCvDataUpdatedAt(
+        typeof data.cvDataUpdatedAt === "string"
+          ? data.cvDataUpdatedAt
+          : null,
+      );
+      if (data.cvData && typeof data.cvData === "object") {
+        const parsed = cvSchema.safeParse(data.cvData);
+        setProfileCvData(parsed.success ? parsed.data : null);
+      } else {
+        setProfileCvData(null);
+      }
+    } catch {
+      setProfileCvData(null);
+      setProfileCvHasFile(false);
+      setProfileCvStoredKind(null);
+      setProfileCvFileHash(null);
+    }
+  }, []);
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.replace("/login");
@@ -102,6 +173,18 @@ export function ProfileClient() {
       cancelled = true;
     };
   }, [status, router]);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    let cancelled = false;
+    setProfileCvLoading(true);
+    refreshProfileCv().finally(() => {
+      if (!cancelled) setProfileCvLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [status, refreshProfileCv]);
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -163,6 +246,76 @@ export function ProfileClient() {
       setSaving(false);
     }
   }, [form, profile]);
+
+  const handleProfileCvParsed = useCallback(
+    async (data: CVData, fileHash?: string) => {
+      try {
+        const body: { cvData: CVData; fileHash?: string } = { cvData: data };
+        if (fileHash !== undefined) body.fileHash = fileHash;
+        const res = await fetch("/api/cv/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          console.error("Kunne ikke lagre CV:", err);
+        }
+      } catch (e) {
+        console.error("Kunne ikke lagre CV:", e);
+      }
+      await refreshProfileCv();
+    },
+    [refreshProfileCv],
+  );
+
+  const handleDownloadCvPdf = useCallback(async () => {
+    if (profileCvStoredKind === "pdf" && profileCvHasFile) {
+      const res = await fetch("/api/cv/file");
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download =
+          profileCvFileName?.toLowerCase().endsWith(".pdf") && profileCvFileName
+            ? profileCvFileName
+            : "CV.pdf";
+        a.rel = "noopener";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        return;
+      }
+    }
+    if (profileCvData) {
+      downloadCvPdf(profileCvData);
+    }
+  }, [
+    profileCvData,
+    profileCvFileName,
+    profileCvStoredKind,
+    profileCvHasFile,
+  ]);
+
+  const handleDownloadOriginalFile = useCallback(async () => {
+    const res = await fetch("/api/cv/file");
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const name =
+      profileCvFileName?.trim() ||
+      (profileCvStoredKind === "docx" ? "CV.docx" : "CV.pdf");
+    a.download = name;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, [profileCvFileName, profileCvStoredKind]);
 
   const handleImportFromCv = useCallback(async () => {
     try {
@@ -516,6 +669,95 @@ export function ProfileClient() {
               <Button variant="outline" onClick={() => setEditing(true)}>
                 Rediger profil
               </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>CV</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {profileCvLoading && <CvDataViewSkeleton />}
+          {!profileCvLoading && profileCvData && (
+            <CvDataView
+              cvData={profileCvData}
+              title="Din CV"
+              profileImageUrl={profile?.profileImageUrl ?? null}
+              profileDisplayName={
+                name ?? session?.user?.name ?? session?.user?.email ?? null
+              }
+              onDownloadPdf={() => void handleDownloadCvPdf()}
+              actions={
+                <CVUpload
+                  compact
+                  onParsed={handleProfileCvParsed}
+                  existingCvData={profileCvData}
+                  existingFileHash={profileCvFileHash ?? undefined}
+                />
+              }
+            />
+          )}
+          {!profileCvLoading &&
+            !profileCvData &&
+            profileCvHasFile && (
+              <div className="space-y-3 rounded-lg border bg-card p-4 text-card-foreground">
+                <p className="text-sm font-medium">
+                  Du har en lagret CV-fil på profilen.
+                </p>
+                {profileCvFileName && (
+                  <p className="text-sm text-muted-foreground">
+                    {profileCvFileName}
+                  </p>
+                )}
+                {profileCvUploadedAt && (
+                  <p className="text-xs text-muted-foreground">
+                    Lastet opp{" "}
+                    {new Date(profileCvUploadedAt).toLocaleString("nb-NO", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    })}
+                  </p>
+                )}
+                <p className="text-sm text-muted-foreground">
+                  Strukturert forhåndsvisning er ikke tilgjengelig. Last opp CV
+                  på nytt som PDF for å få full visning, eller last ned filen du
+                  har lagret.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => void handleDownloadOriginalFile()}
+                  >
+                    <FileDown className="h-3.5 w-3.5" />
+                    Last ned opplastet fil
+                  </Button>
+                  {profileCvStoredKind === "pdf" && (
+                    <Button variant="outline" size="sm" asChild>
+                      <a
+                        href="/api/cv/file?inline=1"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Åpne PDF
+                      </a>
+                    </Button>
+                  )}
+                </div>
+                <CVUpload onParsed={handleProfileCvParsed} />
+              </div>
+            )}
+          {!profileCvLoading && !profileCvData && !profileCvHasFile && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Du har ikke lastet opp CV ennå. Last opp en PDF for å lagre den
+                på profilen og få strukturert visning.
+              </p>
+              <CVUpload onParsed={handleProfileCvParsed} />
             </div>
           )}
         </CardContent>

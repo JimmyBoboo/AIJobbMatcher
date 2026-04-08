@@ -36,7 +36,18 @@ export function CVUpload({
   const [cvData, setCvData] = useState<CVData | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [skippedParse, setSkippedParse] = useState(false);
+  const [storageWarning, setStorageWarning] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function persistCvFileToProfile(file: File): Promise<void> {
+    const formData = new FormData();
+    formData.set("cv", file);
+    const res = await fetch("/api/cv/upload", { method: "POST", body: formData });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({})) as { error?: string };
+      throw new Error(err.error ?? "Kunne ikke lagre CV-fil på profilen");
+    }
+  }
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -57,6 +68,7 @@ export function CVUpload({
     setFileName(file.name);
     setStatus("checking");
     setError(null);
+    setStorageWarning(null);
     setSkippedParse(false);
 
     try {
@@ -71,6 +83,15 @@ export function CVUpload({
         setCvData(existingCvData);
         setStatus("success");
         setSkippedParse(true);
+        try {
+          await persistCvFileToProfile(file);
+        } catch (storeErr) {
+          setStorageWarning(
+            storeErr instanceof Error
+              ? storeErr.message
+              : "Kunne ikke lagre CV-fil på profilen",
+          );
+        }
         onParsed?.(existingCvData, fileHash);
         if (compact) {
           setTimeout(() => handleReset(), 2000);
@@ -104,6 +125,15 @@ export function CVUpload({
       const data = json.data as CVData;
       setCvData(data);
       setStatus("success");
+      try {
+        await persistCvFileToProfile(file);
+      } catch (storeErr) {
+        setStorageWarning(
+          storeErr instanceof Error
+            ? storeErr.message
+            : "Kunne ikke lagre CV-fil på profilen",
+        );
+      }
       onParsed?.(data, fileHash);
       if (compact) {
         handleReset();
@@ -133,6 +163,7 @@ export function CVUpload({
   const handleReset = () => {
     setStatus("idle");
     setError(null);
+    setStorageWarning(null);
     setCvData(null);
     setFileName(null);
   };
@@ -176,6 +207,11 @@ export function CVUpload({
             <CheckCircle2 className="size-4 shrink-0" />
             Samme fil – bruker lagret CV
           </div>
+        )}
+        {status === "success" && storageWarning && (
+          <p className="text-xs text-amber-700 dark:text-amber-500">
+            {storageWarning}
+          </p>
         )}
         {status === "error" && (
           <div className="flex flex-wrap items-center gap-2">
@@ -261,6 +297,12 @@ export function CVUpload({
                 {skippedParse ? "Samme fil – bruker lagret CV" : "CV analysert!"}
               </span>
             </div>
+
+            {storageWarning && (
+              <p className="text-sm text-amber-700 dark:text-amber-500">
+                {storageWarning}
+              </p>
+            )}
 
             <div className="rounded-lg bg-muted p-4">
               <h3 className="font-semibold">{cvData.personalInfo.name}</h3>

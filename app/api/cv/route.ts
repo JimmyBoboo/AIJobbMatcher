@@ -26,6 +26,14 @@ export async function GET(request: NextRequest) {
     const cvFileHash = data?.cvFileHash as string | undefined;
 
     const hasCv = Boolean(cvStoragePath);
+    const cvStoredKind: "pdf" | "docx" | null =
+      !cvStoragePath
+        ? null
+        : cvStoragePath.toLowerCase().endsWith(".pdf")
+          ? "pdf"
+          : cvStoragePath.toLowerCase().endsWith(".docx")
+            ? "docx"
+            : null;
     const cvUploadedAtIso =
       cvUploadedAt?.toDate?.()?.toISOString() ?? undefined;
     const cvDataUpdatedAtIso =
@@ -33,6 +41,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       hasCv,
+      cvStoredKind,
       cvUploadedAt: cvUploadedAtIso,
       cvFileName: hasCv ? cvFileName : undefined,
       cvData: cvData ?? undefined,

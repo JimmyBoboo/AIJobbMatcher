@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     const modelMessages = await convertToModelMessages(messages);
 
     const { output } = await generateText({
-      model: gateway("anthropic/claude-3.5-sonnet"),
+      model: gateway("anthropic/claude-sonnet-4"),
       output: Output.object({ schema: cvSchema }),
       system: EXTRACT_PROMPT,
       messages: modelMessages,

@@ -22,31 +22,31 @@ export async function POST(request: Request) {
     if (!email) {
       return NextResponse.json(
         { error: "E-post er påkrevd." },
-        { status: 400 }
+        { status: 400 },
       );
     }
     if (!isValidEmail(email)) {
       return NextResponse.json(
         { error: "Ugyldig e-postadresse." },
-        { status: 400 }
+        { status: 400 },
       );
     }
     if (!password) {
       return NextResponse.json(
         { error: "Passord er påkrevd." },
-        { status: 400 }
+        { status: 400 },
       );
     }
     if (password.length < MIN_PASSWORD_LENGTH) {
       return NextResponse.json(
         { error: `Passordet må være minst ${MIN_PASSWORD_LENGTH} tegn.` },
-        { status: 400 }
+        { status: 400 },
       );
     }
     if (password !== passwordConfirm) {
       return NextResponse.json(
         { error: "Passordene matcher ikke." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     if (!existing.empty) {
       return NextResponse.json(
         { error: "En konto med denne e-posten finnes allerede." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -76,13 +76,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       { message: "Bruker opprettet.", userId: userRef.id },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (err) {
     console.error("Register error:", err);
     return NextResponse.json(
       { error: "Noe gikk galt. Prøv igjen." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
