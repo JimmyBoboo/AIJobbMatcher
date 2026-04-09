@@ -12,11 +12,12 @@ import {
   buildKeyPoints,
   buildKeyPointsFromNav,
   formatApplicationDue,
-  getSummaryForPreview,
+  getFullReadableJobText,
   htmlToPlainText,
 } from "@/lib/format-job";
 import { isApplicationOpen } from "@/lib/job-utils";
 import { JobSummaryContent } from "@/components/job-summary-content";
+import { JobPineconeSummary } from "@/components/job-pinecone-summary";
 import type {
   PineconeJobRecord,
   NavJobDetailResponse,
@@ -61,7 +62,7 @@ export default function JobDetailPage() {
     if (isSaved) {
       const res = await fetch(
         `/api/jobs/saved?jobId=${encodeURIComponent(id)}`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
       if (res.ok) {
         const data = await res.json();
@@ -340,7 +341,7 @@ export default function JobDetailPage() {
   }
 
   const keyPoints = buildKeyPoints(job);
-  const summaryText = getSummaryForPreview(job, 1200);
+  const pineconeFullText = getFullReadableJobText(job);
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8 sm:px-6">
@@ -407,8 +408,9 @@ export default function JobDetailPage() {
 
           <div className="space-y-5">
             <h2 className="text-base font-semibold">Sammendrag</h2>
-            <JobSummaryContent
-              summaryText={summaryText || "Ingen beskrivelse tilgjengelig."}
+            <JobPineconeSummary
+              jobId={job._id}
+              fullText={pineconeFullText}
             />
           </div>
 

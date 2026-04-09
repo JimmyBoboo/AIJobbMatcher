@@ -29,15 +29,17 @@ import {
 } from "lucide-react";
 import type { PineconeJobRecord } from "@/lib/schemas/job-feed";
 import { isApplicationOpen } from "@/lib/job-utils";
-import type { JobMatchFilters } from "@/lib/job-match-filters";
-import { JobFiltersBar, DEFAULT_JOB_FILTERS } from "@/components/job-filters";
+import {
+  JobMatchChat,
+  type JobMatchSearchResult,
+} from "@/components/job-match-chat";
 
 interface MatchedJobsProps {
   matches: PineconeJobRecord[];
   isLoading: boolean;
   error: string | null;
   hasSearched: boolean;
-  onSearch: (filters?: JobMatchFilters) => void;
+  onSearch: (opts?: { chatMessage?: string }) => Promise<JobMatchSearchResult>;
 }
 
 const MATCHES_PER_PAGE = 10;
@@ -122,7 +124,13 @@ function MatchExplanationBlock({
   };
 
   return (
-    <div className={compact ? "mt-2" : "mt-3 rounded-lg border border-border/60 bg-muted/30 p-3"}>
+    <div
+      className={
+        compact
+          ? "mt-2"
+          : "mt-3 rounded-lg border border-border/60 bg-muted/30 p-3"
+      }
+    >
       <button
         type="button"
         onClick={handleOpen}
@@ -148,9 +156,7 @@ function MatchExplanationBlock({
               <Skeleton className="h-4 w-3/4" />
             </div>
           )}
-          {!loading && error && (
-            <p className="text-destructive">{error}</p>
-          )}
+          {!loading && error && <p className="text-destructive">{error}</p>}
           {!loading && !error && explanation && (
             <p className="leading-relaxed">{explanation}</p>
           )}
@@ -350,7 +356,6 @@ export function MatchedJobs({
   hasSearched,
   onSearch,
 }: MatchedJobsProps) {
-  const [filters, setFilters] = useState<JobMatchFilters>(DEFAULT_JOB_FILTERS);
   const [currentPage, setCurrentPage] = useState(1);
 
   const [explanations, setExplanations] = useState<Record<string, string>>({});
@@ -379,7 +384,9 @@ export function MatchedJobs({
       const data = await res.json();
       if (!res.ok) {
         throw new Error(
-          typeof data.error === "string" ? data.error : "Kunne ikke hente forklaring",
+          typeof data.error === "string"
+            ? data.error
+            : "Kunne ikke hente forklaring",
         );
       }
       setExplanations((prev) => ({
@@ -413,34 +420,15 @@ export function MatchedJobs({
     if (currentPage > totalRestPages) setCurrentPage(1);
   }, [currentPage, totalRestPages]);
 
-  const handleSearch = () => onSearch(filters);
-
   // Initial state: no search has been triggered yet
   if (!isLoading && !error && !hasSearched) {
     return (
       <div className="flex flex-col gap-4">
-        <JobFiltersBar
-          filters={filters}
-          onFiltersChange={setFilters}
+        <JobMatchChat
           disabled={false}
+          isLoading={false}
+          onSearch={onSearch}
         />
-        <Card>
-          <CardContent className="flex flex-col items-center gap-4 py-10">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-              <Search className="h-6 w-6 text-primary" />
-            </div>
-            <div className="text-center">
-              <p className="font-medium">Finn jobber som matcher din profil</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Vi analyserer CV-en din og finner de beste stillingene for deg
-              </p>
-            </div>
-            <Button onClick={handleSearch} size="lg" className="mt-1 gap-2">
-              <Search className="h-4 w-4" />
-              Finn relevante jobber
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     );
   }
@@ -448,10 +436,10 @@ export function MatchedJobs({
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4">
-        <JobFiltersBar
-          filters={filters}
-          onFiltersChange={setFilters}
-          disabled={true}
+        <JobMatchChat
+          disabled
+          isLoading
+          onSearch={onSearch}
         />
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <Skeleton className="h-6 w-40" />
@@ -481,15 +469,19 @@ export function MatchedJobs({
   if (error) {
     return (
       <div className="flex flex-col gap-4">
-        <JobFiltersBar
-          filters={filters}
-          onFiltersChange={setFilters}
+        <JobMatchChat
           disabled={false}
+          isLoading={false}
+          onSearch={onSearch}
         />
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-6">
             <p className="text-sm text-destructive">{error}</p>
-            <Button variant="outline" onClick={handleSearch} size="sm">
+            <Button
+              variant="outline"
+              onClick={() => void onSearch({})}
+              size="sm"
+            >
               Prøv igjen
             </Button>
           </CardContent>
@@ -501,18 +493,23 @@ export function MatchedJobs({
   if (openMatches.length === 0 && hasSearched) {
     return (
       <div className="flex flex-col gap-4">
-        <JobFiltersBar
-          filters={filters}
-          onFiltersChange={setFilters}
+        <JobMatchChat
           disabled={false}
+          isLoading={false}
+          onSearch={onSearch}
         />
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-6">
             <p className="text-sm text-muted-foreground">
-              Ingen treff funnet. Prøv å oppdater CV-en din med mer informasjon.
+              Ingen treff funnet. Skriv i chatten for å snevre inn eller utvide
+              søket, eller oppdater CV-en din.
             </p>
-            <Button variant="outline" onClick={handleSearch} size="sm">
-              Søk igjen
+            <Button
+              variant="outline"
+              onClick={() => void onSearch({})}
+              size="sm"
+            >
+              Søk på nytt (kun CV)
             </Button>
           </CardContent>
         </Card>
@@ -524,10 +521,10 @@ export function MatchedJobs({
 
   return (
     <div className="flex flex-col gap-4">
-      <JobFiltersBar
-        filters={filters}
-        onFiltersChange={setFilters}
+      <JobMatchChat
         disabled={false}
+        isLoading={false}
+        onSearch={onSearch}
       />
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -536,12 +533,12 @@ export function MatchedJobs({
         </h2>
         <Button
           variant="outline"
-          onClick={handleSearch}
+          onClick={() => void onSearch({})}
           size="sm"
           className="w-fit gap-1.5"
         >
           <Search className="h-3.5 w-3.5" />
-          Søk på nytt
+          Søk på nytt (CV)
         </Button>
       </div>
 

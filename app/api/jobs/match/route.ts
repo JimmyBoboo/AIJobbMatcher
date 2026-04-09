@@ -14,9 +14,14 @@ import {
 } from "@/lib/pinecone";
 import type { PineconeJobRecord } from "@/lib/schemas/job-feed";
 import {
+  COUNTIES,
   ENGAGEMENT_TYPE_INDEX_VALUES,
   EXTENT_INDEX_VALUES,
 } from "@/lib/job-match-filters";
+import {
+  jobMatchChatOutputSchema,
+  normalizeCountyFilter,
+} from "@/lib/schemas/job-match-chat";
 
 const USERS_COLLECTION = "users";
 
@@ -76,6 +81,21 @@ const searchQuerySchema = z.object({
     ),
 });
 
+const VALID_ENGAGEMENT = new Set([
+  "",
+  "Heltid",
+  "Deltid",
+  "Vikariat",
+  "Sommerjobb",
+  "Praktikk",
+]);
+
+function normalizeEngagementFromAi(value: string): string | undefined {
+  const t = value.trim();
+  if (!t) return undefined;
+  return VALID_ENGAGEMENT.has(t) ? t : undefined;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const token = await getToken({
@@ -98,29 +118,77 @@ export async function POST(request: NextRequest) {
     const cvData = parsed.data;
     const cvSummary = buildCvSummary(cvData);
 
-    // Optional filter params from request body
-    const engagementType =
-      typeof body?.engagementType === "string"
-        ? body.engagementType.trim() || undefined
-        : undefined;
-    const countyOverride =
-      body?.county != null && body?.county !== ""
-        ? String(body.county).trim()
-        : undefined;
+    const chatMessage =
+      typeof body?.chatMessage === "string" ? body.chatMessage.trim() : "";
 
-    // County: use override if provided and not "ANY"; otherwise use CV-derived
+    let searchQuery: string;
     let county: string | null = null;
-    if (countyOverride && countyOverride.toUpperCase() !== "ANY") {
-      county = countyOverride;
-    } else if (!countyOverride) {
-      county = resolveCounty(cvData.personalInfo.location);
-    }
+    let engagementType: string | undefined;
+    let replyToUser: string | undefined;
 
-    // Step 1: Generate search query from CV using Claude
-    const { output } = await generateText({
-      model: gateway("anthropic/claude-sonnet-4"),
-      output: Output.object({ schema: searchQuerySchema }),
-      prompt: `Du er en ekspert på jobbsøk i Norge. Basert på følgende CV-informasjon, generer et søk på norsk (5-10 ord) som fanger personens mest relevante stillingstittel og topp 2-3 nøkkelferdigheter. Søket brukes til semantisk vektorsøk i en stillingsannonsedatabase.
+    if (chatMessage) {
+      const { output: chatOut } = await generateText({
+        model: gateway("anthropic/claude-sonnet-4"),
+        output: Output.object({ schema: jobMatchChatOutputSchema }),
+        prompt: `Du hjelper en jobbsøker i Norge med semantisk søk i en stillingsdatabase (Pinecone).
+
+CV-informasjon:
+${cvSummary}
+
+Brukerens melding (ønsker og filtre i fritekst):
+${chatMessage}
+
+Oppgave:
+1) searchQuery: lag en norsk søkestreng (5–14 ord) som kombinerer CV og brukerens ønsker — fokus på stillingstype, fagområde og nøkkelferdigheter. Ikke skriv stedsnavn eller fylke i searchQuery (bruk countyFilter).
+2) countyFilter: "USE_CV" hvis bruker ikke ber om sted/fylke. "ANY" hvis bruker vil se hele Norge eller ikke filtrere på fylke. Ellers ett av fylkene nøyaktig: ${COUNTIES.join(", ")}.
+3) engagementType: tom streng hvis ikke relevant; ellers én av: Heltid, Deltid, Vikariat, Sommerjobb, Praktikk.
+4) replyToUser: én kort bekreftelsessetning på norsk om hva vi søker etter.
+
+Vær konkret. Ikke finn opp erfaring brukeren ikke har.`,
+      });
+
+      if (!chatOut) {
+        return NextResponse.json(
+          { error: "Kunne ikke tolke meldingen" },
+          { status: 500 },
+        );
+      }
+
+      searchQuery = chatOut.searchQuery.trim();
+      replyToUser = chatOut.replyToUser.trim();
+
+      const cf = normalizeCountyFilter(chatOut.countyFilter);
+      if (cf === "ANY") {
+        county = null;
+      } else if (cf === "USE_CV") {
+        county = resolveCounty(cvData.personalInfo.location);
+      } else {
+        county = COUNTIES.includes(cf) ? cf : resolveCounty(cvData.personalInfo.location);
+      }
+
+      engagementType = normalizeEngagementFromAi(chatOut.engagementType);
+    } else {
+      const engagementFromBody =
+        typeof body?.engagementType === "string"
+          ? body.engagementType.trim() || undefined
+          : undefined;
+      const countyOverride =
+        body?.county != null && body?.county !== ""
+          ? String(body.county).trim()
+          : undefined;
+
+      if (countyOverride && countyOverride.toUpperCase() !== "ANY") {
+        county = countyOverride;
+      } else if (!countyOverride) {
+        county = resolveCounty(cvData.personalInfo.location);
+      }
+
+      engagementType = engagementFromBody;
+
+      const { output } = await generateText({
+        model: gateway("anthropic/claude-sonnet-4"),
+        output: Output.object({ schema: searchQuerySchema }),
+        prompt: `Du er en ekspert på jobbsøk i Norge. Basert på følgende CV-informasjon, generer et søk på norsk (5-10 ord) som fanger personens mest relevante stillingstittel og topp 2-3 nøkkelferdigheter. Søket brukes til semantisk vektorsøk i en stillingsannonsedatabase.
 
 CV-informasjon:
 ${cvSummary}
@@ -130,16 +198,17 @@ Regler:
 - Inkluder 2-3 av de viktigste ferdighetene/teknologiene
 - IKKE inkluder stedsnavn (filtreres separat)
 - Eksempler: "frontend utvikler React JavaScript", "sykepleier geriatri palliasjon", "prosjektleder IT agile"`,
-    });
+      });
 
-    if (!output) {
-      return NextResponse.json(
-        { error: "Kunne ikke generere søk fra CV" },
-        { status: 500 },
-      );
+      if (!output) {
+        return NextResponse.json(
+          { error: "Kunne ikke generere søk fra CV" },
+          { status: 500 },
+        );
+      }
+
+      searchQuery = output.searchQuery.trim();
     }
-
-    const { searchQuery } = output;
 
     // Step 2: Search Pinecone for matching jobs
     const pc = getPineconeClient();
@@ -242,7 +311,11 @@ Regler:
       { merge: true },
     );
 
-    return NextResponse.json({ matches, searchQuery });
+    return NextResponse.json({
+      matches,
+      searchQuery,
+      ...(replyToUser ? { replyToUser } : {}),
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("Job match error:", message);

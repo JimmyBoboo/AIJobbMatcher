@@ -14,7 +14,7 @@ import {
   pineconeJobRecordSchema,
   type PineconeJobRecord,
 } from "@/lib/schemas/job-feed";
-import type { JobMatchFilters } from "@/lib/job-match-filters";
+import type { JobMatchSearchResult } from "@/components/job-match-chat";
 import { z } from "zod";
 
 const matchedJobsResponseSchema = z.object({
@@ -54,16 +54,18 @@ export function DashboardClient() {
   );
 
   const fetchJobMatches = useCallback(
-    async (cvData: CVData, filters?: JobMatchFilters) => {
+    async (
+      cvData: CVData,
+      opts?: { chatMessage?: string },
+    ): Promise<JobMatchSearchResult> => {
       setMatchLoading(true);
       setMatchError(null);
       try {
         const body: Record<string, unknown> = { cvData };
-        if (filters) {
-          if (filters.engagementType?.trim())
-            body.engagementType = filters.engagementType.trim();
-          // Send selected county, or "ANY" when "Alle fylker" so API skips county filter
-          body.county = filters.county?.trim() || "ANY";
+        if (opts?.chatMessage?.trim()) {
+          body.chatMessage = opts.chatMessage.trim();
+        } else {
+          body.county = "ANY";
         }
         const res = await fetch("/api/jobs/match", {
           method: "POST",
@@ -78,10 +80,19 @@ export function DashboardClient() {
         const matches = data.matches ?? [];
         setMatchedJobs(matches);
         setHasSearched(true);
+        return {
+          searchQuery:
+            typeof data.searchQuery === "string" ? data.searchQuery : "",
+          replyToUser:
+            typeof data.replyToUser === "string"
+              ? data.replyToUser
+              : undefined,
+        };
       } catch (e) {
         setMatchError(
           e instanceof Error ? e.message : "Kunne ikke hente jobbmatcher",
         );
+        throw e;
       } finally {
         setMatchLoading(false);
       }
@@ -216,7 +227,7 @@ export function DashboardClient() {
             isLoading={matchLoading}
             error={matchError}
             hasSearched={hasSearched}
-            onSearch={(filters) => fetchJobMatches(parsedCV, filters)}
+            onSearch={(opts) => fetchJobMatches(parsedCV, opts)}
           />
         </>
       )}

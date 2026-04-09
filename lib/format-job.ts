@@ -118,6 +118,63 @@ export function htmlToPlainText(html: string): string {
   return text.replace(/\n{3,}/g, "\n\n");
 }
 
+/** Rikere HTML→tekst for indeksert stillingsinnhold (Pinecone), for lesbar oppdeling. */
+export function htmlToPlainTextForIndexedBody(html: string): string {
+  if (!html?.trim()) return "";
+  let text = html
+    .replace(/<h[1-6][^>]*>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>\s*<p>/gi, "\n\n")
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<\/h[1-6]>\s*/gi, "\n\n")
+    .replace(/<li[^>]*>/gi, "\n– ")
+    .replace(/<\/li>\s*/gi, "")
+    .replace(/<\/?(ul|ol)[^>]*>/gi, "\n")
+    .replace(/<p[^>]*>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
+  return text.replace(/\n{3,}/g, "\n\n");
+}
+
+function jobBodyLooksLikeHtml(text: string): boolean {
+  return /<[a-z][\s\S]*>/i.test(text);
+}
+
+/**
+ * Full annonsetekst fra Pinecone for visning (ingen tegnbegrensning).
+ * HTML normaliseres; «mur av tekst» deles i avsnitt.
+ */
+export function getFullReadableJobText(job: PineconeJobRecord): string {
+  const raw = getJobSummaryText(job).trim();
+  if (!raw) return "";
+  const plain = jobBodyLooksLikeHtml(raw)
+    ? htmlToPlainTextForIndexedBody(raw)
+    : raw.replace(/\r\n/g, "\n");
+  return splitWallOfTextIntoParagraphs(plain);
+}
+
+/** Når annonsen er ett sammenhengende avsnitt, grupper setninger for luft. */
+export function splitWallOfTextIntoParagraphs(text: string): string {
+  const t = text.replace(/\r\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  if (t.includes("\n\n")) return t;
+  const sentences = t
+    .split(/(?<=[.!?])\s+/u)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (sentences.length <= 2) return t;
+  const chunks: string[] = [];
+  for (let i = 0; i < sentences.length; i += 3) {
+    chunks.push(sentences.slice(i, i + 3).join(" "));
+  }
+  return chunks.join("\n\n");
+}
+
 export function buildGeneratedSummary(job: PineconeJobRecord): string {
   const formattedDue = formatApplicationDue(job.application_due);
   const parts: string[] = [];
@@ -171,8 +228,13 @@ export function getSummaryForPreview(
   return (lastSpace > maxChars / 2 ? cut.slice(0, lastSpace) : cut) + "…";
 }
 
-const SECTION_HEADING_MAX_LENGTH = 80;
+/** Lengre fraser først slik at «hva vi kan tilby» ikke matcher «vi tilbyr» feil. */
 const SECTION_LABELS = [
+  "dette ser vi etter",
+  "hva vi kan tilby",
+  "generelt om stillingen",
+  "dette søker vi",
+  "sammendrag",
   "arbeidsoppgaver",
   "kvalifikasjoner",
   "om stillingen",

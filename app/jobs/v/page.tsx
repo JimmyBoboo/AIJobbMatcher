@@ -3,16 +3,14 @@
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, ExternalLink } from "lucide-react";
-import type { NavJobDetailResponse, NavJobDetailJson } from "@/lib/schemas/job-feed";
+import type {
+  NavJobDetailResponse,
+  NavJobDetailJson,
+} from "@/lib/schemas/job-feed";
 import { isApplicationOpen } from "@/lib/job-utils";
 import {
   buildKeyPointsFromNav,
@@ -43,7 +41,8 @@ function VacancyContent() {
     fetch(`/api/nav/job/${apiPath}`)
       .then((res) => {
         if (!res.ok) {
-          if (res.status === 401) throw new Error("Ikke tilgang til stillingen");
+          if (res.status === 401)
+            throw new Error("Ikke tilgang til stillingen");
           if (res.status === 404) throw new Error("Stillingen ble ikke funnet");
           throw new Error("Kunne ikke hente stillingen");
         }
@@ -110,7 +109,9 @@ function VacancyContent() {
         </Link>
         <Card className="mt-6">
           <CardContent className="py-10 text-center">
-            <p className="text-muted-foreground">Ingen stillingsdetaljer tilgjengelig.</p>
+            <p className="text-muted-foreground">
+              Ingen stillingsdetaljer tilgjengelig.
+            </p>
             <Button variant="outline" className="mt-4" asChild>
               <Link href="/jobs">Tilbake til stillinger</Link>
             </Button>
@@ -160,7 +161,9 @@ function VacancyContent() {
               <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
                 {keyPoints.map(({ label, value }) => (
                   <li key={label}>
-                    <span className="font-medium text-foreground">{label}:</span>{" "}
+                    <span className="font-medium text-foreground">
+                      {label}:
+                    </span>{" "}
                     {value}
                   </li>
                 ))}
@@ -171,7 +174,9 @@ function VacancyContent() {
           <div className="space-y-5">
             <h2 className="text-base font-semibold">Sammendrag</h2>
             <JobSummaryContent
-              summaryText={plainDescription || "Ingen beskrivelse tilgjengelig."}
+              summaryText={
+                plainDescription || "Ingen beskrivelse tilgjengelig."
+              }
             />
           </div>
 
@@ -181,7 +186,9 @@ function VacancyContent() {
               {json.employer?.name && (
                 <>
                   <dt className="font-medium text-foreground">Arbeidsgiver</dt>
-                  <dd className="text-muted-foreground">{json.employer.name}</dd>
+                  <dd className="text-muted-foreground">
+                    {json.employer.name}
+                  </dd>
                 </>
               )}
               {json.applicationDue && (
@@ -195,8 +202,12 @@ function VacancyContent() {
               )}
               {json.engagementtype && (
                 <>
-                  <dt className="font-medium text-foreground">Ansettelsesform</dt>
-                  <dd className="text-muted-foreground">{json.engagementtype}</dd>
+                  <dt className="font-medium text-foreground">
+                    Ansettelsesform
+                  </dt>
+                  <dd className="text-muted-foreground">
+                    {json.engagementtype}
+                  </dd>
                 </>
               )}
               {json.workLocations?.length ? (
@@ -205,7 +216,9 @@ function VacancyContent() {
                   <dd className="text-muted-foreground">
                     {json.workLocations
                       .map((l) =>
-                        [l.city, l.county, l.municipal].filter(Boolean).join(", ")
+                        [l.city, l.county, l.municipal]
+                          .filter(Boolean)
+                          .join(", "),
                       )
                       .filter(Boolean)
                       .join("; ") || "—"}
