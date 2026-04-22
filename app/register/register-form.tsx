@@ -53,8 +53,12 @@ export function RegisterForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-6">
-      <Card className="w-full max-w-sm">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12 sm:px-6">
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_100%_80%_at_50%_-30%,rgb(37_99_235_/_0.18),transparent_55%),radial-gradient(ellipse_70%_50%_at_100%_100%,rgb(124_58_237_/_0.12),transparent_50%),radial-gradient(ellipse_60%_40%_at_0%_100%,rgb(96_165_250_/_0.14),transparent_50%)]"
+        aria-hidden
+      />
+      <Card className="relative w-full max-w-sm shadow-lg">
         <CardHeader>
           <CardTitle>Opprett konto</CardTitle>
           <CardDescription>
