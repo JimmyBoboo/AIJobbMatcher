@@ -16,7 +16,6 @@ import {
   htmlToPlainText,
 } from "@/lib/format-job";
 import { isApplicationOpen } from "@/lib/job-utils";
-import { JobSummaryContent } from "@/components/job-summary-content";
 import { JobPineconeSummary } from "@/components/job-pinecone-summary";
 import type {
   PineconeJobRecord,
@@ -240,9 +239,19 @@ export default function JobDetailPage() {
 
             <div className="space-y-5">
               <h2 className="text-base font-semibold">Sammendrag</h2>
-              <JobSummaryContent
-                summaryText={
-                  plainDescription || "Ingen beskrivelse tilgjengelig."
+              <JobPineconeSummary
+                jobId={job._id}
+                fullText={plainDescription || getFullReadableJobText(job)}
+                title={navDetail.title ?? job.title}
+                employer={navDetail.employer?.name ?? job.employer}
+                occupation={job.occupation}
+                location={
+                  navDetail.workLocations
+                    ?.map((l) =>
+                      [l.city, l.municipal, l.county].filter(Boolean).join(", "),
+                    )
+                    .filter(Boolean)
+                    .join("; ") || job.location
                 }
               />
             </div>
@@ -411,6 +420,10 @@ export default function JobDetailPage() {
             <JobPineconeSummary
               jobId={job._id}
               fullText={pineconeFullText}
+              title={job.title}
+              employer={job.employer}
+              occupation={job.occupation}
+              location={job.location}
             />
           </div>
 

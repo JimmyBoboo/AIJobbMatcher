@@ -29,7 +29,8 @@ import {
   Trophy,
 } from "lucide-react";
 import type { PineconeJobRecord } from "@/lib/schemas/job-feed";
-import { isApplicationOpen } from "@/lib/job-utils";
+import { isCurrentJobListing } from "@/lib/job-utils";
+import { parseDate } from "@/lib/format-job";
 import {
   JobMatchChat,
   type JobMatchSearchResult,
@@ -50,12 +51,6 @@ const absoluteDateOptions: Intl.DateTimeFormatOptions = {
   month: "long",
   year: "numeric",
 };
-
-function parseDate(value: string | undefined | null): Date | null {
-  if (value == null || String(value).trim() === "") return null;
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
 
 function formatApplicationDue(value: string | undefined | null): string | null {
   const date = parseDate(value);
@@ -404,7 +399,10 @@ export function MatchedJobs({
   }, []);
 
   const openMatches = matches.filter((j) =>
-    isApplicationOpen(j.application_due),
+    isCurrentJobListing({
+      applicationDue: j.application_due,
+      sistEndret: j.published,
+    }),
   );
   const rest = openMatches.slice(3);
   const totalRestPages = Math.max(1, Math.ceil(rest.length / MATCHES_PER_PAGE));

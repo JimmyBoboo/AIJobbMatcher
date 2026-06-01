@@ -9,9 +9,53 @@ import { readableSummarySchema } from "@/lib/schemas/readable-job-summary";
 
 const MAX_BODY_CHARS = 8000;
 
-const requestBodySchema = z.object({
-  jobId: z.string().min(1, "jobId er påkrevd"),
-});
+const requestBodySchema = z
+  .object({
+    jobId: z.string().min(1).optional(),
+    fullText: z.string().optional(),
+    title: z.string().optional(),
+    employer: z.string().optional(),
+    occupation: z.string().optional(),
+    location: z.string().optional(),
+  })
+  .refine(
+    (data) =>
+      Boolean(data.jobId?.trim()) || Boolean(data.fullText?.trim() && data.title?.trim()),
+    {
+      message: "jobId eller fullText med title er påkrevd",
+    },
+  );
+
+async function resolveJobSource(parsed: z.infer<typeof requestBodySchema>): Promise<{
+  fullText: string;
+  title: string;
+  employer: string;
+  occupation?: string;
+  location?: string;
+} | null> {
+  if (parsed.fullText?.trim() && parsed.title?.trim()) {
+    return {
+      fullText: parsed.fullText.trim(),
+      title: parsed.title.trim(),
+      employer: parsed.employer?.trim() ?? "",
+      occupation: parsed.occupation?.trim() || undefined,
+      location: parsed.location?.trim() || undefined,
+    };
+  }
+
+  if (!parsed.jobId?.trim()) return null;
+
+  const job = await fetchPineconeJobById(parsed.jobId.trim());
+  if (!job) return null;
+
+  return {
+    fullText: getFullReadableJobText(job),
+    title: job.title,
+    employer: job.employer,
+    occupation: job.occupation || undefined,
+    location: job.location || undefined,
+  };
+}
 
 function fallbackSections(
   jobTitle: string,
@@ -68,15 +112,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const job = await fetchPineconeJobById(parsed.data.jobId);
-    if (!job) {
+    const sourceJob = await resolveJobSource(parsed.data);
+    if (!sourceJob) {
       return NextResponse.json(
         { error: "Stillingen ble ikke funnet" },
         { status: 404 },
       );
     }
 
-    const fullText = getFullReadableJobText(job);
+    const { fullText, title, employer, occupation, location } = sourceJob;
     const source =
       fullText.length > MAX_BODY_CHARS
         ? `${fullText.slice(0, MAX_BODY_CHARS)}\n\n[…teksten er forkortet for oppsummering]`
@@ -84,12 +128,7 @@ export async function POST(request: NextRequest) {
 
     if (!source.trim()) {
       return NextResponse.json(
-        fallbackSections(
-          job.title,
-          job.employer,
-          job.occupation,
-          job.location,
-        ),
+        fallbackSections(title, employer, occupation, location),
         { status: 200 },
       );
     }
@@ -112,10 +151,10 @@ Regler:
 - Ingen markdown, ingen HTML.
 - Rekkefølge: start gjerne med arbeidsoppgaver/rollen, deretter kvalifikasjoner/krav, deretter hva arbeidsgiver tilbyr (hvis det finnes i kilden).
 
-Stilling: ${job.title}
-Arbeidsgiver: ${job.employer}
-${job.occupation ? `Yrkesområde: ${job.occupation}` : ""}
-${job.location ? `Sted: ${job.location}` : ""}
+Stilling: ${title}
+Arbeidsgiver: ${employer}
+${occupation ? `Yrkesområde: ${occupation}` : ""}
+${location ? `Sted: ${location}` : ""}
 
 Annonsetekst:
 ${source}`,

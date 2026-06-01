@@ -12,6 +12,7 @@ import {
   PINECONE_JOB_INDEX,
   PINECONE_JOB_NAMESPACE,
 } from "@/lib/pinecone";
+import { isCurrentJobListing } from "@/lib/job-utils";
 import type { PineconeJobRecord } from "@/lib/schemas/job-feed";
 import {
   COUNTIES,
@@ -298,10 +299,17 @@ Regler:
       },
     );
 
+    const openMatches = matches.filter((match) =>
+      isCurrentJobListing({
+        applicationDue: match.application_due,
+        sistEndret: match.published,
+      }),
+    );
+
     const userId = token.id;
     const db = getAdminFirestore();
     const matchesForFirestore = JSON.parse(
-      JSON.stringify(matches),
+      JSON.stringify(openMatches),
     ) as PineconeJobRecord[];
     await db.collection(USERS_COLLECTION).doc(userId).set(
       {
@@ -312,7 +320,7 @@ Regler:
     );
 
     return NextResponse.json({
-      matches,
+      matches: openMatches,
       searchQuery,
       ...(replyToUser ? { replyToUser } : {}),
     });

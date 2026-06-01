@@ -12,12 +12,14 @@ import type {
   NavJobDetailJson,
 } from "@/lib/schemas/job-feed";
 import { isApplicationOpen } from "@/lib/job-utils";
+import { extractNavJobDetail } from "@/lib/nav-feed-detail";
 import {
   buildKeyPointsFromNav,
   formatApplicationDue,
   htmlToPlainText,
+  splitWallOfTextIntoParagraphs,
 } from "@/lib/format-job";
-import { JobSummaryContent } from "@/components/job-summary-content";
+import { JobPineconeSummary } from "@/components/job-pinecone-summary";
 
 function VacancyContent() {
   const searchParams = useSearchParams();
@@ -95,7 +97,7 @@ function VacancyContent() {
     );
   }
 
-  const json = (data?.json ?? data?.ad_content) as NavJobDetailJson | undefined;
+  const json = data ? extractNavJobDetail(data) : null;
 
   if (!json) {
     return (
@@ -125,7 +127,15 @@ function VacancyContent() {
     json.url ?? json.sourceUrl ?? (data as { url?: string }).url;
   const applicationClosed = !isApplicationOpen(json.applicationDue);
   const plainDescription = htmlToPlainText(json.description ?? "");
+  const fullText = splitWallOfTextIntoParagraphs(plainDescription);
   const keyPoints = buildKeyPointsFromNav(json);
+  const locationLabel =
+    json.workLocations
+      ?.map((l) =>
+        [l.city, l.municipal, l.county].filter(Boolean).join(", "),
+      )
+      .filter(Boolean)
+      .join("; ") ?? "";
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8 sm:px-6">
@@ -173,10 +183,11 @@ function VacancyContent() {
 
           <div className="space-y-5">
             <h2 className="text-base font-semibold">Sammendrag</h2>
-            <JobSummaryContent
-              summaryText={
-                plainDescription || "Ingen beskrivelse tilgjengelig."
-              }
+            <JobPineconeSummary
+              fullText={fullText}
+              title={json.title ?? "Stilling"}
+              employer={json.employer?.name ?? ""}
+              location={locationLabel || undefined}
             />
           </div>
 

@@ -8,13 +8,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { ReadableSummarySection } from "@/lib/schemas/readable-job-summary";
 
 interface JobPineconeSummaryProps {
-  jobId: string;
   fullText: string;
+  /** Pinecone job id when available; otherwise send fullText + metadata. */
+  jobId?: string;
+  title?: string;
+  employer?: string;
+  occupation?: string;
+  location?: string;
 }
 
 export function JobPineconeSummary({
-  jobId,
   fullText,
+  jobId,
+  title,
+  employer,
+  occupation,
+  location,
 }: JobPineconeSummaryProps) {
   const { status } = useSession();
   const [sections, setSections] = useState<ReadableSummarySection[]>([]);
@@ -22,14 +31,28 @@ export function JobPineconeSummary({
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (status !== "authenticated" || !jobId.trim()) return;
+    if (status !== "authenticated") return;
+    const trimmedText = fullText.trim();
+    const trimmedJobId = jobId?.trim();
+    if (!trimmedJobId && (!trimmedText || !title?.trim())) return;
+
     let cancelled = false;
     setLoading(true);
     setFailed(false);
+
+    const body: Record<string, string | undefined> = {
+      fullText: trimmedText || undefined,
+      title: title?.trim() || undefined,
+      employer: employer?.trim() || undefined,
+      occupation: occupation?.trim() || undefined,
+      location: location?.trim() || undefined,
+    };
+    if (trimmedJobId) body.jobId = trimmedJobId;
+
     fetch("/api/jobs/readable-summary", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jobId: jobId.trim() }),
+      body: JSON.stringify(body),
     })
       .then(async (res) => {
         const data: unknown = await res.json();
@@ -50,7 +73,7 @@ export function JobPineconeSummary({
     return () => {
       cancelled = true;
     };
-  }, [jobId, status]);
+  }, [jobId, fullText, title, employer, occupation, location, status]);
 
   const showAiBlock =
     status === "authenticated" && (loading || sections.length >= 2);
@@ -142,7 +165,7 @@ export function JobPineconeSummary({
       {status === "unauthenticated" && (
         <p className="text-xs text-muted-foreground">
           Logg inn for et strukturert KI-sammendrag av stillingen. Full tekst
-          fra databasen vises under.
+          vises under.
         </p>
       )}
 
@@ -155,8 +178,8 @@ export function JobPineconeSummary({
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Ingen lengre beskrivelse er lagret for denne stillingen. Bruk «Søk på
-          stillingen» for mer hos NAV.
+          Ingen lengre beskrivelse er tilgjengelig for denne stillingen. Bruk
+          «Søk på stillingen» for mer hos NAV.
         </p>
       )}
     </div>

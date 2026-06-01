@@ -19,6 +19,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { JobItem, PaginatedJobsResponse } from "@/lib/schemas/job-feed";
+import { formatApplicationDue } from "@/lib/format-job";
 import type { JobMatchFilters } from "@/lib/job-match-filters";
 import { JobFiltersBar, DEFAULT_JOB_FILTERS } from "@/components/job-filters";
 
@@ -302,6 +303,11 @@ function JobCard({ job }: { job: JobItem }) {
               {entry.municipal}
             </span>
           )}
+          {entry.applicationDue && formatApplicationDue(entry.applicationDue) && (
+            <span className="text-xs text-muted-foreground">
+              Søknadsfrist: {formatApplicationDue(entry.applicationDue)}
+            </span>
+          )}
           {entry.sistEndret && (
             <span className="text-xs text-muted-foreground">
               Oppdatert:{" "}
@@ -309,6 +315,12 @@ function JobCard({ job }: { job: JobItem }) {
             </span>
           )}
         </div>
+        {job.content_text &&
+          job.content_text.trim() !== "Stillingsannonse" && (
+            <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
+              {job.content_text}
+            </p>
+          )}
       </div>
     </>
   );
