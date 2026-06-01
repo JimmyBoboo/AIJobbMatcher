@@ -96,15 +96,16 @@ export function JobMatchChat({
   return (
     <div
       className={cn(
-        "flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm",
+        "flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm",
         className,
       )}
     >
-      <div className="border-b bg-muted/40 px-4 py-3">
-        <h3 className="text-sm font-semibold text-foreground">
+      <div className="relative border-b border-border bg-gradient-to-r from-primary/[0.06] via-ai/[0.05] to-brand-light/[0.08] px-4 py-3 dark:from-primary/15 dark:via-ai/10 dark:to-brand-light/10">
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-primary/40 via-ai/50 to-brand-light/40 opacity-70" />
+        <h3 className="relative text-sm font-semibold text-foreground">
           Chat med jobbsøk
         </h3>
-        <p className="mt-0.5 text-xs text-muted-foreground">
+        <p className="relative mt-0.5 text-xs text-muted-foreground">
           Beskriv ønsket ditt — vi bruker KI og Pinecone for å finne relevante
           stillinger.
         </p>
@@ -121,18 +122,18 @@ export function JobMatchChat({
           >
             {msg.role === "assistant" && (
               <div
-                className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10"
+                className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/15 to-ai/20"
                 aria-hidden
               >
-                <Bot className="h-4 w-4 text-primary" />
+                <Bot className="h-4 w-4 text-ai" />
               </div>
             )}
             <div
               className={cn(
                 "max-w-[85%] rounded-2xl px-3 py-2 leading-relaxed",
                 msg.role === "user"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-foreground",
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "border-l-2 border-ai/40 bg-muted/80 text-foreground",
               )}
             >
               {msg.content}
@@ -156,7 +157,7 @@ export function JobMatchChat({
         <div ref={bottomRef} />
       </div>
 
-      <div className="space-y-2 border-t bg-muted/20 p-3">
+      <div className="space-y-2 border-t border-border bg-muted/30 p-3">
         <Textarea
           placeholder="F.eks. Jeg ønsker stillinger innen IT…"
           value={input}

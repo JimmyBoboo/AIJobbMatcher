@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Pagination,
   PaginationContent,
@@ -128,13 +129,13 @@ function MatchExplanationBlock({
       className={
         compact
           ? "mt-2"
-          : "mt-3 rounded-lg border border-border/60 bg-muted/30 p-3"
+          : "mt-3 rounded-lg border border-ai/20 bg-gradient-to-br from-ai/[0.04] to-brand-light/[0.06] p-3 dark:from-ai/10 dark:to-brand-light/5"
       }
     >
       <button
         type="button"
         onClick={handleOpen}
-        className="flex w-full items-center justify-between gap-2 text-left text-sm font-medium text-muted-foreground hover:text-foreground"
+        className="flex w-full items-center justify-between gap-2 text-left text-sm font-medium text-muted-foreground hover:text-ai"
         aria-expanded={expanded}
       >
         <span className="inline-flex items-center gap-1.5">
@@ -196,8 +197,8 @@ function PodiumCard({
         href={`/jobs/${encodeURIComponent(job._id)}`}
         className={`group relative flex min-w-0 flex-1 flex-col rounded-xl border-2 p-4 text-left transition-all hover:shadow-md cursor-pointer min-h-0 ${
           isGold
-            ? "border-yellow-400/50 bg-yellow-50/50 dark:border-yellow-500/30 dark:bg-yellow-950/20"
-            : "border-border bg-card hover:border-muted-foreground/30"
+            ? "border-yellow-400/50 bg-yellow-50/50 ring-2 ring-success/25 dark:border-yellow-500/30 dark:bg-yellow-950/20 dark:ring-success/30"
+            : "border-border bg-card hover:border-brand-light/40"
         }`}
       >
         <div className="mb-3 flex items-start gap-2">
@@ -528,9 +529,13 @@ export function MatchedJobs({
       />
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-lg font-semibold">
-          Topp {openMatches.length} matcher
-        </h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-lg font-semibold text-foreground">
+            Topp {openMatches.length} matcher
+          </h2>
+          <Badge variant="success">Match funnet</Badge>
+          <Badge variant="ai">Smart match</Badge>
+        </div>
         <Button
           variant="outline"
           onClick={() => void onSearch({})}
