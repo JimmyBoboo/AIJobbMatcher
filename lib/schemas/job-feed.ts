@@ -19,6 +19,8 @@ export const jobItemSchema = z.object({
   content_text: z.string().optional(),
   date_modified: z.string().optional(),
   _feed_entry: feedEntrySchema,
+  /** Full NAV vacancy detail when enriched server-side. */
+  _nav_detail: z.custom<NavJobDetailJson>().optional(),
 });
 
 export const feedResponseSchema = z.object({
@@ -74,6 +76,8 @@ export interface NavJobDetailJson {
   title?: string;
   description?: string;
   applicationDue?: string;
+  /** NAV expiry timestamp; used when applicationDue is missing. */
+  expires?: string;
   engagementtype?: string;
   /** Omfang (Heltid/Deltid); should be stored as metadata when indexing to Pinecone. */
   extent?: string;

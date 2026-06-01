@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isApplicationOpen } from "@/lib/job-utils";
+import {
+  dedupeFeedItemsByLatestState,
+  isCurrentFeedItem,
+  isCurrentJobListing,
+  type FeedItemLike,
+} from "@/lib/job-utils";
+import { enrichFeedItemsWithDetail } from "@/lib/nav-feed-detail";
 import {
   getPineconeClient,
   PINECONE_JOB_INDEX,
@@ -19,9 +25,7 @@ const MAX_ITEMS = 5000;
 const PINECONE_BROWSE_TOP_K = 1000;
 const BROAD_QUERY = "stilling jobb Norge";
 
-type FeedItem = {
-  _feed_entry?: { status?: string; applicationDue?: string };
-  applicationDue?: string;
+type FeedItem = FeedItemLike & {
   [key: string]: unknown;
 };
 
@@ -169,7 +173,10 @@ export async function GET(request: NextRequest) {
         });
       });
       const openItems = items.filter((item) =>
-        isApplicationOpen(item._feed_entry.applicationDue)
+        isCurrentJobListing({
+          applicationDue: item._feed_entry.applicationDue,
+          sistEndret: item._feed_entry.sistEndret,
+        })
       );
       return NextResponse.json({
         items: openItems,
@@ -187,9 +194,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Missing API key" }, { status: 500 });
     }
 
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const ifModifiedSince = sevenDaysAgo.toUTCString();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const ifModifiedSince = thirtyDaysAgo.toUTCString();
 
     const headers: HeadersInit = {
       Accept: "application/json",
@@ -204,6 +211,8 @@ export async function GET(request: NextRequest) {
 
     while (nextUrl && pageCount < MAX_PAGES && allItems.length < MAX_ITEMS) {
       const response = await fetch(nextUrl, { headers });
+
+      if (response.status === 304) break;
 
       if (!response.ok) {
         console.warn(`NAV feed page error: ${response.status} for ${nextUrl}`);
@@ -227,13 +236,9 @@ export async function GET(request: NextRequest) {
       pageCount++;
     }
 
-    const items = (allItems as FeedItem[]).filter((item) => {
-      const status = item._feed_entry?.status;
-      if (status === "INACTIVE") return false;
-      const due =
-        item.applicationDue ?? item._feed_entry?.applicationDue;
-      return isApplicationOpen(due);
-    });
+    const dedupedItems = dedupeFeedItemsByLatestState(allItems);
+    const candidates = dedupedItems.filter(isCurrentFeedItem);
+    const items = await enrichFeedItemsWithDetail(apiKey, candidates);
 
     return NextResponse.json({
       ...data,

@@ -2,6 +2,7 @@ import type {
   NavJobDetailJson,
   PineconeJobRecord,
 } from "@/lib/schemas/job-feed";
+import { parseJobDate } from "@/lib/job-utils";
 
 const absoluteDateOptions: Intl.DateTimeFormatOptions = {
   day: "numeric",
@@ -10,9 +11,7 @@ const absoluteDateOptions: Intl.DateTimeFormatOptions = {
 };
 
 export function parseDate(value: string | undefined | null): Date | null {
-  if (value == null || String(value).trim() === "") return null;
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? null : d;
+  return parseJobDate(value);
 }
 
 export function formatApplicationDue(

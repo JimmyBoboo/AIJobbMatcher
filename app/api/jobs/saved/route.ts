@@ -6,6 +6,7 @@ import {
   PINECONE_JOB_INDEX,
   PINECONE_JOB_NAMESPACE,
 } from "@/lib/pinecone";
+import { isCurrentJobListing } from "@/lib/job-utils";
 import type { PineconeJobRecord } from "@/lib/schemas/job-feed";
 
 const USERS_COLLECTION = "users";
@@ -79,7 +80,14 @@ export async function GET(request: NextRequest) {
       if (raw) jobs.push(mapRecordToJob(id, raw));
     }
 
-    return NextResponse.json({ jobIds, jobs });
+    const openJobs = jobs.filter((job) =>
+      isCurrentJobListing({
+        applicationDue: job.application_due,
+        sistEndret: job.published,
+      }),
+    );
+
+    return NextResponse.json({ jobIds, jobs: openJobs });
   } catch (err) {
     console.error("Saved jobs fetch error:", err);
     return NextResponse.json(
